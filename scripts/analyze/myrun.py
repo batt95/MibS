@@ -14,15 +14,19 @@ instanceDirs = {
     #'IBLP-FIS': '/home/sat214/cutPaperMibS/dataPaper/iblpFis',
     #'INTERD-DEN': '/home/sat214/cutPaperMibS/dataPaper/interdDen',
     #'IBLP-DEN': '/home/sat214/cutPaperMibS/dataPaper/iblpDen',
-    'IBLP-ZHANG': '/home/sat214/MIBS/ozaltinData/convertedData/Testbed1/'
+    # 'IBLP-ZHANG': '/home/sat214/MIBS/ozaltinData/convertedData/Testbed1/'
+    'INTER-KP': '/Users/feb223/projects/coin/intersectionCuts/Data/BOBILIB/interdiction/knapsack-interdiction/INTER-KP',
+    'DENEGRE': '/Users/feb223/projects/coin/intersectionCuts/Data/BOBILIB/general-bilevel/purely-integer/DENEGRE',
+    # 'SMALL': '/Users/feb223/projects/coin/intersectionCuts/Data/BOBILIB/general-bilevel/purely-integer/SMALL',
+    # 'INTER-KP': '/Users/feb223/projects/coin/intersectionCuts/Data/BOBILIB/interdiction/knapsack-interdiction/INTER-KP'
 }
 
 #versions = ['1.1', 'ib']
 #versions = ['1.2-opt']
-versions = ['pr-92']
+versions = ['1.2']
 
 # Output parent path
-outputDir = '/home/ted/Projects/MibS/output'
+outputDir = '/Users/feb223/projects/coin/intersectionCuts/test/output'
 
 # Name
 testname = 'mibs'
@@ -32,6 +36,8 @@ mibsParamsInputs = {}
 
 commonParams = {
     'Alps_timeLimit': '3600',
+    'Alps_msgLevel': '1',
+    # 'Alps_nodeLimit': '0',
     'Blis_scaleConFactor': '10000000000',
     'Blis_heurStrategy': '0',             # -2: root, -1: auto, 0: disable, any positive integer
     'Blis_heurRound': '0',                # -2: root, -1: auto, 0: disable, any positive integer
@@ -41,12 +47,13 @@ commonParams = {
     'MibS_useWSHeuristic': '0',           # -1: auto, 0: false, 1: true
     'MibS_useGreedyHeuristic': '0',       # 0: false, 1: true
     'MibS_objBoundStrategy': '0',         # 0: LL obj bound, 1: interdiction bound
-    'MibS_blisCutStrategy': '-1',         # -2: root, -1: auto, 0: disable, any positive integer
+    'MibS_blisCutStrategy': '0',         # -2: root, -1: auto, 0: disable, any positive integer
 #    'MibS_warmStartLL': '0',
     'MibS_maxThreadsLL': '1',
     'MibS_allowRemoveCut': '0',           # 0: false, 1: true
     'MibS_whichCutsLL': '2',              # 0: no cuts, 1: gomory only, 2: all cuts
     'MibS_doDualFixing': '0',
+    'MibS_branchStrategy': '1',
 #    'MibS_feasCheckSolver': 'SYMPHONY',
     'MibS_solveSecondLevelWhenXYVarsInt': '1',
     'MibS_solveSecondLevelWhenXVarsInt': '0',
@@ -55,7 +62,37 @@ commonParams = {
     'MibS_computeBestUBWhenLVarsInt': '0',
     'MibS_computeBestUBWhenLVarsFixed': '1',
     'MibS_useLinkingSolutionPool': '1',
-}    
+    'MibS_printParameters': '1'
+}   
+
+mibsParamsInputs['kSwaps+IDP'] = {
+    'MibS_turnOffDefaultCuts': '1',
+    'MibS_useIntersectionCut': '1',
+    'MibS_useImprovingSolutionIC': '0',
+    'MibS_useImprovingDirectionIC': '1',
+    'MibS_improvingDirectionType': '1',
+    'MibS_useFractionalCuts': '1',
+    'MibS_useImprovingDirectionPool': '1'
+}
+
+mibsParamsInputs['kSwaps'] = {
+    'MibS_turnOffDefaultCuts': '1',
+    'MibS_useIntersectionCut': '1',
+    'MibS_useImprovingSolutionIC': '0',
+    'MibS_useImprovingDirectionIC': '1',
+    'MibS_improvingDirectionType': '1',
+    'MibS_useFractionalCuts': '1',
+    'MibS_useImprovingDirectionPool': '1'
+}
+
+mibsParamsInputs['watermelon'] = {
+    'MibS_turnOffDefaultCuts': '1',
+    'MibS_useIntersectionCut': '1',
+    'MibS_useImprovingSolutionIC': '0',
+    'MibS_useImprovingDirectionIC': '1',
+    'MibS_improvingDirectionType': '0',
+    'MibS_useFractionalCuts': '1'
+}
 
 # mibsParamsInputs['default'] = {
 #     'MibS_branchStrategy': '1',           # 0: fractional, 1: linking
@@ -141,12 +178,12 @@ commonParams = {
 #     'MibS_feasCheckSolver' : 'CPLEX'
 # }
 
-mibsParamsInputs['incObj'] = {
-    'MibS_turnOffOtherCuts': '1',
-    'MibS_useIncObjCut':'1',
-    'MibS_branchStrategy': '1',           # 0: fractional, 1: linking
-    'MibS_solveSecondLevelWhenLVarsInt': '1',
-}
+# mibsParamsInputs['incObj'] = {
+#     'MibS_turnOffOtherCuts': '1',
+#     'MibS_useIncObjCut':'1',
+#     'MibS_branchStrategy': '1',           # 0: fractional, 1: linking
+#     'MibS_solveSecondLevelWhenLVarsInt': '1',
+# }
 
 # mibsParamsInputs['incObj-frac'] = {
 #     'MibS_turnOffOtherCuts': '1',
@@ -155,12 +192,12 @@ mibsParamsInputs['incObj'] = {
 #     'MibS_solveSecondLevelWhenLVarsInt': '0',
 # }
 
-mibsParamsInputs['genNoGood'] = {
-    'MibS_turnOffOtherCuts': '1',
-    'MibS_useGeneralNoGoodCut':'1',
-    'MibS_branchStrategy': '1',           # 0: fractional, 1: linking
-    'MibS_solveSecondLevelWhenLVarsInt': '1',           # 0: fractional, 1: linking
-}
+# mibsParamsInputs['genNoGood'] = {
+#     'MibS_turnOffOtherCuts': '1',
+#     'MibS_useGeneralNoGoodCut':'1',
+#     'MibS_branchStrategy': '1',           # 0: fractional, 1: linking
+#     'MibS_solveSecondLevelWhenLVarsInt': '1',           # 0: fractional, 1: linking
+# }
 
 # mibsParamsInputs['genNoGood-frac'] = {
 #     'MibS_turnOffOtherCuts': '1',
@@ -190,13 +227,13 @@ mibsParamsInputs['genNoGood'] = {
 #     'MibS_solveSecondLevelWhenLVarsInt': '1',           # 0: fractional, 1: linking
 # }
 
-mibsParamsInputs['fracWatermelon'] = {
-    'MibS_turnOffOtherCuts': '1',
-    'MibS_useTypeWatermelon': '1',
-    'MibS_useFractionalCuts': '1',
-    'MibS_branchStrategy': '1',           # 0: fractional, 1: linking
-    'MibS_solveSecondLevelWhenLVarsInt': '0',           # 0: fractional, 1: linking
-}
+# mibsParamsInputs['fracWatermelon'] = {
+#     'MibS_turnOffOtherCuts': '1',
+#     'MibS_useTypeWatermelon': '1',
+#     'MibS_useFractionalCuts': '1',
+#     'MibS_branchStrategy': '1',           # 0: fractional, 1: linking
+#     'MibS_solveSecondLevelWhenLVarsInt': '0',           # 0: fractional, 1: linking
+# }
 
 # mibsParamsInputs['fracWatermelon-frac'] = {
 #     'MibS_turnOffOtherCuts': '1',

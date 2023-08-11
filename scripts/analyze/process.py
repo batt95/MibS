@@ -46,6 +46,7 @@ def parseOutput(outputDir, versions, scenarios, writeCSV=True, filename="summary
         "ll_int_var": "integer LL Variables",
         "num_cuts": "Called MIBS cut generator",
         "infeasible": "infeasible",
+        "chk_feas_time" : "Checking feasibility"
     }
 
     results = collections.defaultdict(list)
@@ -147,8 +148,9 @@ def parseOutput(outputDir, versions, scenarios, writeCSV=True, filename="summary
                                                         results["solved"].append(True)
                                                     else:
                                                         results["solved"].append(False)
-                                        # elif keywords[10] in line:
-                                        #    results['ul_int_var'].append(int(line.split(':')[1]))
+
+                                        elif keywords["chk_feas_time"] in line:
+                                           results['chk_feas_time'].append(float(line.split(' ')[-2]))
 
                                         # elif keywords[11] in line:
                                         #    results['ll_int_var'].append(int(line.split(':')[1]))
@@ -195,8 +197,8 @@ def parseOutput(outputDir, versions, scenarios, writeCSV=True, filename="summary
     # make some adjustment to formats
     # display check feasibility time as % of search time?
     # sum vf+ub time -> feasibility time (or read from output directly?)
-    df_result["chk_feas_time"] = df_result["ub_time"] + df_result["vf_time"]
-    df_result["chk_feas_time"] = df_result["chk_feas_time"].astype(float).round(2)
+    # df_result["chk_feas_time"] = df_result["ub_time"] + df_result["vf_time"]
+    # df_result["chk_feas_time"] = df_result["chk_feas_time"].astype(float).round(2)
     df_result["cpu"] = df_result["cpu"].astype(float).round(2)
 
     # write results to .csv file
@@ -341,6 +343,7 @@ def plotPerfProf(
     df["virtual_best"] = df[col_list].min(axis=1)
 
     for col in col_list:
+        print(col_list)
         print(col)
         # for each col, compute ratio
         ratios = df[col] / df["virtual_best"]
@@ -612,24 +615,31 @@ def plotBaselineProf(
 if __name__ == "__main__":
 
     dataSets = [
-        'MIBLP-XU',
-        "IBLP-FIS",
-        'INTERD-DEN',
-        'IBLP-DEN',
-        'IBLP-ZHANG'
+        # 'MIBLP-XU',
+        # "IBLP-FIS",
+        # 'INTERD-DEN',
+        # 'IBLP-DEN',
+        # 'IBLP-ZHANG'
+        'DENEGRE',
+        # 'SMALL'
     ]
 
     # versions = ['1.1', 'ib']
     # versions = ["1.2-opt", "rev1"]
     # versions = ["1.2-opt", "1.2-opt-cplex"]
-    versions = ['1.2+newWS','1.2+5.6']
+    # versions = ['1.2+newWS','1.2+5.6']
+    versions = ['1.2']
     
     # Output parent path
-    outputDir = "/home/ted/Projects/MibS/output"
+    # outputDir = "/home/ted/Projects/MibS/output"
+    outputDir = "/Users/feb223/projects/coin/intersectionCuts/test/output"
 
     scenarios = {
-        'default' : 'Default',
-        'default+WS' : 'Default w/ Warm Start',
+        'kswaps' : 'kSwaps',
+        'kswaps+idp' : 'kSwaps+IDP',
+        'watermelon' : 'watermelon'
+        # 'default' : 'Default',
+        # 'default+WS' : 'Default w/ Warm Start',
         # 'default-frac',
         #'benders' : 'BendersInterdict (link)',
         #'benders-frac' : 'BendersInterdict (frac)',
@@ -659,7 +669,7 @@ if __name__ == "__main__":
         #'type1-WS' : 'Type1 (link+WS)',
         #"type2" : "Type2 (link)",
         #"type2-frac" : "Type2 (frac)",
-        'noCut' : "No Cuts (link)", 
+        # 'noCut' : "No Cuts (link)", 
         #'noCut-WS' : "No Cuts (link+WS)", 
         # 'interdiction',
     }
@@ -694,10 +704,10 @@ if __name__ == "__main__":
         "nodes": "Number of Processed Nodes",
         "gap": "Final Gap",
         "solved": "Solved",
-        # 'chk_feas_time': 'Check Feasibility Time',
-        # 'vf_solved': 'Number of VF problem solved',
-        # 'ub_solved': 'Number of UB problem solved',
-        # 'objval': 'Object Value'
+        'chk_feas_time': 'Check Feasibility Time',
+        'vf_solved': 'Number of VF problem solved',
+        'ub_solved': 'Number of UB problem solved',
+        'objval': 'Object Value'
     }
 
     df_proc = processTable(df_r, displayCols, writeLTX=False, filename=file_txt)
@@ -705,8 +715,11 @@ if __name__ == "__main__":
     ################### Make Performance Profile ####################
     # columns to compare in the plot
     plotCols = {
-        "cpu": ["CPU Time", 25],
-        "nodes": ["Nodes Processed", 50],
+        "cpu": ["CPU Time", 20],
+        "nodes": ["Nodes Processed", 25],
+        "chk_feas_time": ['Check Feasibility Time', 50],
+        "vf_solved": ['Number of VF problem solved', 50],
+        "ub_solved": ['Number of UB problem solved', 50]
     }
     # plotCols = {}
 
@@ -730,6 +743,7 @@ if __name__ == "__main__":
         
     for ds in dataSets:
         df_solved, df_has_soln = dropFilter(df_proc, scenarios, ds)
+        print(df_solved)
         for col in plotCols:
             df_sub = df_solved.xs(
                 (ds, col), level=["datasets", "fields"], axis=1, drop_level=True
