@@ -1561,10 +1561,41 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
 	localModel_->bS_->shouldPrune_ = true;
     }
     else if(nSolver->isProvenOptimal()){
-	const double *optSol = nSolver->getColSolution();
-	CoinDisjointCopyN(optSol, lCols, lowerLevelSol);
-	CoinDisjointCopyN(optSol + lCols, numContCols, uselessIneqs);
-        foundSolution = true;
+      const double *optSol = nSolver->getColSolution();
+      CoinDisjointCopyN(optSol, lCols, lowerLevelSol);
+      CoinDisjointCopyN(optSol + lCols, numContCols, uselessIneqs);
+      foundSolution = true;
+
+      int useImprovingDirectionPool = localModel_->MibSPar_->entry(
+                MibSParams::useImprovingDirectionPool);
+      
+      if (useImprovingDirectionPool){
+        if (localModel_->seenImprovingDirections.size() < 
+            localModel_->maxImprovingDirectionSize){
+          double zerotol(1e-7);
+          IMPROVING_DIRECTION w;
+          w.idx.reserve(5);
+          w.vals.reserve(5);
+          w.uselessIneqsIdx.reserve(10);
+          w.uselessIneqsVals.reserve(10);
+          for (i = 0; i < lCols; i++){
+            if (lowerLevelSol[i] > zerotol){
+              w.idx.push_back(i);
+              w.vals.push_back(lowerLevelSol[i]);
+            }
+          }
+
+          for (i = 0; i < numContCols; i++){
+            if (uselessIneqs[i] > zerotol){
+              w.uselessIneqsIdx.push_back(i);
+              w.uselessIneqsVals.push_back(uselessIneqs[i]);
+            }
+          }
+
+          localModel_->seenImprovingDirections.push_back(w);
+
+        }
+      }
     }
     else{//this case should not happen when we use intersection cut for removing
 	//the optimal solution of relaxation which satisfies integrality requirements
@@ -6013,7 +6044,9 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
      
      if (useIntersectionCutImprovingDirection == PARAM_ON){
         cutType = MibSIntersectionCutImprovingDirection;
+        localModel_->cutStats.intCalls++;
         numCuts += intersectionCuts(conPool, bS->optLowerSolutionOrd_, cutType);
+        localModel_->cutStats.intCallSuccess += numCuts;
      }
      
      if (useIntersectionCutTypeHypercubeIC == PARAM_ON){
@@ -6066,7 +6099,9 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
 
      if (useIntersectionCutImprovingDirection == PARAM_ON){
         cutType = MibSIntersectionCutImprovingDirection;
+        localModel_->cutStats.fracCalls++;
         numCuts += intersectionCuts(conPool, bS->optLowerSolutionOrd_, cutType);
+        localModel_->cutStats.fracCallSuccess += numCuts;
      }
      
      if (useIntersectionCutTypeHypercubeIC == PARAM_ON && haveSecondLevelSol){
@@ -6094,7 +6129,9 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
      
      if (useIntersectionCutImprovingDirection == PARAM_ON){
         cutType = MibSIntersectionCutImprovingDirection;
+        localModel_->cutStats.fracCalls++;
         numCuts += intersectionCuts(conPool, bS->optLowerSolutionOrd_, cutType);
+        localModel_->cutStats.fracCallSuccess += numCuts;
      }
      if (useIntersectionCutTypeIC == PARAM_ON && ((haveSecondLevelSol &&
            relaxedObjVal > localModel_->bS_->objVal_ + localModel_->etol_) ||

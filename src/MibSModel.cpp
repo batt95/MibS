@@ -188,6 +188,7 @@ MibSModel::initialize()
   //maxAuxCols_ = 0; //FIXME: should make this a parameter
   maxImprovingDirectionSize = 200;  // make this a parameter
   seenImprovingDirections.reserve(maxImprovingDirectionSize);
+  cutStats = {0, 0, 0, 0, 0};
 }
 
 //#############################################################################
