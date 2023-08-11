@@ -75,6 +75,16 @@ mibsParamsInputs['kSwaps+IDP'] = {
     'MibS_useImprovingDirectionPool': '1'
 }
 
+mibsParamsInputs['watermelon+IDP'] = {
+    'MibS_turnOffDefaultCuts': '1',
+    'MibS_useIntersectionCut': '1',
+    'MibS_useImprovingSolutionIC': '0',
+    'MibS_useImprovingDirectionIC': '1',
+    'MibS_improvingDirectionType': '0',
+    'MibS_useFractionalCuts': '1',
+    'MibS_useImprovingDirectionPool': '1'
+}
+
 mibsParamsInputs['kSwaps'] = {
     'MibS_turnOffDefaultCuts': '1',
     'MibS_useIntersectionCut': '1',
@@ -93,6 +103,7 @@ mibsParamsInputs['watermelon'] = {
     'MibS_improvingDirectionType': '0',
     'MibS_useFractionalCuts': '1'
 }
+
 
 # mibsParamsInputs['default'] = {
 #     'MibS_branchStrategy': '1',           # 0: fractional, 1: linking
