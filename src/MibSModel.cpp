@@ -186,6 +186,8 @@ MibSModel::initialize()
   //bindingMethod_ = "BASIS"; //FIXME: should make this a parameter
   MibSPar_ = new MibSParams;
   //maxAuxCols_ = 0; //FIXME: should make this a parameter
+  maxImprovingDirectionSize = 1000;  // make this a parameter
+  seenImprovingDirections.reserve(maxImprovingDirectionSize);
 }
 
 //#############################################################################
@@ -2006,6 +2008,10 @@ MibSModel::setupSelf()
    if (MibSPar_->entry(MibSParams::cutStrategy) != BRANCHONLY){
 
       MibSCutGenerator *cg = new MibSCutGenerator(this);
+
+      // feb223
+      // FIXME
+      cg->getLowerMatrices(true, false, true);
 
       cg->setStrategy(BlisCutStrategyPeriodic);
       cg->setCutGenerationFreq(1);  // Generate cuts at every node
@@ -4014,6 +4020,11 @@ MibSModel::instanceStructure()
 	}
 	if (MibSPar_->entry(MibSParams::useImprovingDirectionIC) == PARAM_ON){
            std::cout << "Improving direction intersection cut generator is on." << std::endl;
+           if(MibSPar_->entry(MibSParams::improvingDirectionType) == MibSImprovingDirectionTypeLocalSearch){
+            std::cout << "Improving direction Local Search is on." << std::endl;
+           } else {
+            std::cout << "Improving direction Watermelon is on." << std::endl;
+           }
 	}
 	if (MibSPar_->entry(MibSParams::useHypercubeIC) == PARAM_ON){
            std::cout << "Hypercube intersection cut generator is on." << std::endl;
@@ -4083,7 +4094,6 @@ MibSModel::instanceStructure()
     }
     
     //Setting "saveSeenLinkingSols" parameter
-    
     if (MibSPar_->entry(MibSParams::useLinkingSolutionPool) == PARAM_NOTSET){
        MibSPar()->setEntry(MibSParams::useLinkingSolutionPool, PARAM_ON);
     }

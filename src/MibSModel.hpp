@@ -288,11 +288,16 @@ private:
 
     std::map<std::vector<double>, LINKING_SOLUTION> seenLinkingSolutions;
     //std::map<std::vector<double>, LINKING_SOLUTION>::iterator it;
+
+    int maxImprovingDirectionSize;
+    std::vector<IMPROVING_DIRECTION> seenImprovingDirections;
     
 public:
 
     MibSModel();
     ~MibSModel();
+
+    ID_STATISTICS cutStats;
 
     enum colSign {
        colSignPositive,

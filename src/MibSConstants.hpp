@@ -87,6 +87,15 @@ enum MibSBilevelFreeSetTypeISIC{
     MibSBilevelFreeSetTypeISICWithNewLLSol
 };
 
+// feb223
+//#############################################################################
+
+enum MibSImprovingDirectionType{
+    MibSImprovingDirectionTypeNotSet = -1,
+    MibSImprovingDirectionTypeOptSol,
+    MibSImprovingDirectionTypeLocalSearch
+};
+
 //#############################################################################
 
 enum MibSRelaxTypeParamBoundCut{
