@@ -391,6 +391,7 @@ MibSTreeNode::process(bool isRoot, bool rampUp)
 	  }
 	  else{
 	      tailOffTol = BlisPar->entry(BlisParams::tailOff);
+        //   tailOffTol = 1e-7;
 	  }
 
 	  if((!ipSol) && (bS->shouldPrune_)){

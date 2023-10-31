@@ -73,6 +73,8 @@ class MibSParams : public AlpsParameterSet {
      useImprovingDirectionIC,
      //  feb233
      improvingDirectionType,
+     maxEnumerationLocalSearch,
+     maxFeasImprovingDirections,
      useHypercubeIC,
      useTenderIC,
      useHybridIC,
@@ -90,6 +92,7 @@ class MibSParams : public AlpsParameterSet {
      useLinkingSolutionPool,
      //  feb223
      useImprovingDirectionPool,
+     maxImprovingDirectionPoolSize,
      newPureIntCutDepthLb,
      newPureIntCutDepthUb,
      boundCutOptimalType,

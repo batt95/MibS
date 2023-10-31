@@ -186,8 +186,7 @@ MibSModel::initialize()
   //bindingMethod_ = "BASIS"; //FIXME: should make this a parameter
   MibSPar_ = new MibSParams;
   //maxAuxCols_ = 0; //FIXME: should make this a parameter
-  maxImprovingDirectionSize = 200;  // make this a parameter
-  seenImprovingDirections.reserve(maxImprovingDirectionSize);
+  
   cutStats = {0, 0, 0, 0, 0};
 }
 
@@ -3882,7 +3881,7 @@ MibSModel::instanceStructure()
                     << "matrix.";
           std::cout << std::endl;
           MibSPar()->setEntry(MibSParams::useImprovingDirectionIC, PARAM_OFF);
-          assert(0);
+         //  assert(0);
        }
        if (isLowerObjInt_ == false){
           std::cout << "The improving direction intersection cut is only valid "
@@ -3890,7 +3889,7 @@ MibSModel::instanceStructure()
                     << "coefficients.";
           std::cout << std::endl;
           MibSPar()->setEntry(MibSParams::useImprovingDirectionIC, PARAM_OFF);
-          assert(0);
+         //  assert(0);
        }
     }
     if (MibSPar_->entry(MibSParams::useImprovingDirectionIC) == PARAM_ON){
@@ -3991,43 +3990,69 @@ MibSModel::instanceStructure()
 	}
 
 	if (MibSPar_->entry(MibSParams::useBendersInterdictionCut) == PARAM_ON){
-           if (MibSPar_->entry(MibSParams::bendersInterdictionCutType) ==
-               MibSBendersInterdictionCutTypeJustOneCut){
-              std::cout << "Benders interdiction cut generator (just one cut) is on.";
-              std::cout << std::endl;
-           }else{
-              std::cout << "Benders interdiction cut generator (multiple cuts) is on.";
-              std::cout << std::endl;
-           }
-	}
-        
-        if (MibSPar_->entry(MibSParams::useIntegerNoGoodCut) == PARAM_ON){
-           std::cout << "Integer no-good cut generator is on."<< std::endl;
+      if (MibSPar_->entry(MibSParams::bendersInterdictionCutType) ==
+         MibSBendersInterdictionCutTypeJustOneCut){
+         std::cout << "Benders interdiction cut generator (just one cut) is on.";
+         std::cout << std::endl;
+      }else{
+         std::cout << "Benders interdiction cut generator (multiple cuts) is on.";
+         std::cout << std::endl;
+      }
+	} 
+   if (MibSPar_->entry(MibSParams::useIntegerNoGoodCut) == PARAM_ON){
+      std::cout << "Integer no-good cut generator is on."<< std::endl;
 	}
         
 	if (MibSPar_->entry(MibSParams::useNoGoodCut) == PARAM_ON){
-           std::cout << "No-good cut generator is on."<< std::endl;
+      std::cout << "No-good cut generator is on."<< std::endl;
 	}
 
 	if (MibSPar_->entry(MibSParams::useGeneralizedNoGoodCut) == PARAM_ON){
-           std::cout << "Generalized no-good cut generator is on."<< std::endl;
+      std::cout << "Generalized no-good cut generator is on."<< std::endl;
 	}
 
 	if (MibSPar_->entry(MibSParams::useImprovingSolutionIC) == PARAM_ON){
-           if (MibSPar_->entry(MibSParams::bilevelFreeSetTypeISIC) ==
-               MibSBilevelFreeSetTypeISICWithLLOptSol){
-              std::cout << "Improving solution intersection cut generator (Type I) is on." << std::endl;
-           }else{
-              std::cout << "Improving solution intersection cut generator (Type II) is on." << std::endl;
-           }              
+      if (MibSPar_->entry(MibSParams::bilevelFreeSetTypeISIC) ==
+         MibSBilevelFreeSetTypeISICWithLLOptSol){
+         std::cout << "Improving solution intersection cut generator (Type I) is on." << std::endl;
+      }else{
+         std::cout << "Improving solution intersection cut generator (Type II) is on." << std::endl;
+      }              
 	}
+
+   paramValue = MibSPar_->entry(MibSParams::improvingDirectionType);
+
+   // Param: "MibS_ImprovingDirectionType" 
 	if (MibSPar_->entry(MibSParams::useImprovingDirectionIC) == PARAM_ON){
-           std::cout << "Improving direction intersection cut generator is on." << std::endl;
-           if(MibSPar_->entry(MibSParams::improvingDirectionType) == MibSImprovingDirectionTypeLocalSearch){
-            std::cout << "Improving direction Local Search is on." << std::endl;
-           } else {
-            std::cout << "Improving direction Watermelon is on." << std::endl;
-           }
+      std::cout << "Improving direction intersection cut generator is on." << std::endl;
+      if (paramValue == MibSImprovingDirectionTypeLocalSearch){
+      std::cout << "Improving direction Local Search is on." << std::endl;
+         // Param: "MibS_maxEnumerationLocalSearch"
+         if (MibSPar_->entry(MibSParams::maxEnumerationLocalSearch) > lowerDim_){
+            MibSPar()->setEntry(MibSParams::maxEnumerationLocalSearch,
+                        lowerDim_);
+         } else 
+         if (MibSPar_->entry(MibSParams::maxEnumerationLocalSearch) < 1){
+            // Param not set or invalid.
+            // Set a default value
+            MibSPar()->setEntry(MibSParams::maxEnumerationLocalSearch,
+                        (3 < lowerDim_ ? 3 : lowerDim_));
+         } 
+         // Param: "MibS_maxFeasImprovingDirections"
+         if (MibSPar_->entry(MibSParams::maxFeasImprovingDirections) < 1){
+            // Param not set or invalid.
+            // Set a default value
+            MibSPar()->setEntry(MibSParams::maxFeasImprovingDirections, 10);
+         }
+      } else 
+      if (paramValue == MibSImprovingDirectionTypeOptSol){
+      std::cout << "Improving direction Watermelon is on." << std::endl;
+      } else 
+      if (paramValue == MibSImprovingDirectionTypeNotSet){
+      std::cout << "Improving direction type not set. Turning Watermelon on." << std::endl;
+      MibSPar()->setEntry(MibSParams::improvingDirectionType,
+                        MibSImprovingDirectionTypeOptSol);
+      }
 	}
 	if (MibSPar_->entry(MibSParams::useHypercubeIC) == PARAM_ON){
            std::cout << "Hypercube intersection cut generator is on." << std::endl;
@@ -4096,7 +4121,7 @@ MibSModel::instanceStructure()
        }
     }
     
-    //Setting "saveSeenLinkingSols" parameter
+    // Setting "saveSeenLinkingSols" parameter
     if (MibSPar_->entry(MibSParams::useLinkingSolutionPool) == PARAM_NOTSET){
        MibSPar()->setEntry(MibSParams::useLinkingSolutionPool, PARAM_ON);
     }
@@ -4107,6 +4132,34 @@ MibSModel::instanceStructure()
        }
        else{
           std::cout << "Linking solution pool will not be used." << std::endl;
+	}
+    }
+
+    // Setting "useImprovingDirectionPool" parameter
+    if (MibSPar_->entry(MibSParams::useImprovingDirectionIC) == PARAM_OFF ||
+        MibSPar_->entry(MibSParams::useImprovingDirectionIC) == PARAM_NOTSET){
+       MibSPar()->setEntry(MibSParams::useImprovingDirectionPool, PARAM_OFF);
+    } else {
+      // Setting "maxImprovingDirectionPoolSize" parameter
+      paramValue = MibSPar_->entry(MibSParams::maxImprovingDirectionPoolSize);
+      if (paramValue < 1){
+         // Param not set or invalid.
+         // Set a default value
+         paramValue = 200;
+         MibSPar()->setEntry(MibSParams::maxImprovingDirectionPoolSize, paramValue);
+      }
+      // Preallocate enough space for seenImprovingDirections
+      seenImprovingDirections.reserve(paramValue + 
+               MibSPar_->entry(MibSParams::maxFeasImprovingDirections) + 5);
+    }
+    
+    if (printProblemInfo == true){
+
+       if(MibSPar_->entry(MibSParams::useImprovingDirectionPool) == PARAM_ON){
+          std::cout << "Improving direction pool will be used." << std::endl;
+       }
+       else{
+          std::cout << "Improving direction pool will not be used." << std::endl;
 	}
     }
     //if (MibSPar_->entry(MibSParams::printParameters)){
