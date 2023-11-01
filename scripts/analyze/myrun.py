@@ -15,18 +15,18 @@ instanceDirs = {
     #'INTERD-DEN': '/home/sat214/cutPaperMibS/dataPaper/interdDen',
     #'IBLP-DEN': '/home/sat214/cutPaperMibS/dataPaper/iblpDen',
     # 'IBLP-ZHANG': '/home/sat214/MIBS/ozaltinData/convertedData/Testbed1/'
-    #'DENEGRE': '/home/feb223/improvingDir/MibS/Data/BOBILIB/general-bilevel/purely-integer/DENEGRE',
-    'INTER-KP': '/home/feb223/improvingDir/MibS/Data/BOBILIB/interdiction/knapsack-interdiction/INTER-KP',
-    'INT0SUM': '/home/feb223/improvingDir/MibS/Data/BOBILIB/general-bilevel/purely-integer/INT0SUM',
-    'KP': '/home/feb223/improvingDir/MibS/Data/BOBILIB/interdiction/knapsack-interdiction/KP',
-    'CCLW':  '/home/feb223/improvingDir/MibS/Data/BOBILIB/interdiction/knapsack-interdiction/CCLW',
-    'MIPLIB3': '/home/feb223/improvingDir/MibS/Data/BOBILIB/general-bilevel/purely-integer/MIPLIB3',
-    'ZHANG': '/home/feb223/improvingDir/MibS/Data/BOBILIB/general-bilevel/purely-integer/ZHANG'
+    'DENEGRE': '/home/feb223/improvingDir/MibS/Data/BOBILIB/general-bilevel/purely-integer/DENEGRE',
+    # 'INTER-KP': '/home/feb223/improvingDir/MibS/Data/BOBILIB/interdiction/knapsack-interdiction/INTER-KP',
+    # 'INT0SUM': '/home/feb223/improvingDir/MibS/Data/BOBILIB/general-bilevel/purely-integer/INT0SUM',
+    # 'KP': '/home/feb223/improvingDir/MibS/Data/BOBILIB/interdiction/knapsack-interdiction/KP',
+    # 'CCLW':  '/home/feb223/improvingDir/MibS/Data/BOBILIB/interdiction/knapsack-interdiction/CCLW',
+    # 'MIPLIB3': '/home/feb223/improvingDir/MibS/Data/BOBILIB/general-bilevel/purely-integer/MIPLIB3',
+    # 'ZHANG': '/home/feb223/improvingDir/MibS/Data/BOBILIB/general-bilevel/purely-integer/ZHANG'
 }
 
 #versions = ['1.1', 'ib']
 #versions = ['1.2-opt']
-versions = ['improvingDir']
+versions = ['ipco', '1.2']
 
 # Output parent path
 outputDir = '/home/feb223/tests/improvingDir/output'
@@ -68,44 +68,57 @@ commonParams = {
     'MibS_printParameters': '1'
 }   
 
-mibsParamsInputs['kSwaps+IDP'] = {
+
+mibsParamsInputs['IDIC'] = {
     'MibS_turnOffDefaultCuts': '1',
     'MibS_useIntersectionCut': '1',
     'MibS_useImprovingSolutionIC': '0',
     'MibS_useImprovingDirectionIC': '1',
     'MibS_improvingDirectionType': '1',
     'MibS_useFractionalCuts': '1',
-    'MibS_useImprovingDirectionPool': '1'
+    'MibS_useImprovingDirectionPool': '0'
 }
 
-mibsParamsInputs['watermelon+IDP'] = {
-    'MibS_turnOffDefaultCuts': '1',
-    'MibS_useIntersectionCut': '1',
-    'MibS_useImprovingSolutionIC': '0',
-    'MibS_useImprovingDirectionIC': '1',
-    'MibS_improvingDirectionType': '0',
-    'MibS_useFractionalCuts': '1',
-    'MibS_useImprovingDirectionPool': '1'
-}
 
-mibsParamsInputs['kSwaps'] = {
-    'MibS_turnOffDefaultCuts': '1',
-    'MibS_useIntersectionCut': '1',
-    'MibS_useImprovingSolutionIC': '0',
-    'MibS_useImprovingDirectionIC': '1',
-    'MibS_improvingDirectionType': '1',
-    'MibS_useFractionalCuts': '1',
-    'MibS_useImprovingDirectionPool': '1'
-}
 
-mibsParamsInputs['watermelon'] = {
-    'MibS_turnOffDefaultCuts': '1',
-    'MibS_useIntersectionCut': '1',
-    'MibS_useImprovingSolutionIC': '0',
-    'MibS_useImprovingDirectionIC': '1',
-    'MibS_improvingDirectionType': '0',
-    'MibS_useFractionalCuts': '1'
-}
+# mibsParamsInputs['kSwaps+IDP'] = {
+#     'MibS_turnOffDefaultCuts': '1',
+#     'MibS_useIntersectionCut': '1',
+#     'MibS_useImprovingSolutionIC': '0',
+#     'MibS_useImprovingDirectionIC': '1',
+#     'MibS_improvingDirectionType': '1',
+#     'MibS_useFractionalCuts': '1',
+#     'MibS_useImprovingDirectionPool': '1'
+# }
+
+# mibsParamsInputs['watermelon+IDP'] = {
+#     'MibS_turnOffDefaultCuts': '1',
+#     'MibS_useIntersectionCut': '1',
+#     'MibS_useImprovingSolutionIC': '0',
+#     'MibS_useImprovingDirectionIC': '1',
+#     'MibS_improvingDirectionType': '0',
+#     'MibS_useFractionalCuts': '1',
+#     'MibS_useImprovingDirectionPool': '1'
+# }
+
+# mibsParamsInputs['kSwaps'] = {
+#     'MibS_turnOffDefaultCuts': '1',
+#     'MibS_useIntersectionCut': '1',
+#     'MibS_useImprovingSolutionIC': '0',
+#     'MibS_useImprovingDirectionIC': '1',
+#     'MibS_improvingDirectionType': '1',
+#     'MibS_useFractionalCuts': '1',
+#     'MibS_useImprovingDirectionPool': '1'
+# }
+
+# mibsParamsInputs['watermelon'] = {
+#     'MibS_turnOffDefaultCuts': '1',
+#     'MibS_useIntersectionCut': '1',
+#     'MibS_useImprovingSolutionIC': '0',
+#     'MibS_useImprovingDirectionIC': '1',
+#     'MibS_improvingDirectionType': '0',
+#     'MibS_useFractionalCuts': '1'
+# }
 
 
 # mibsParamsInputs['default'] = {
