@@ -6915,7 +6915,7 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
         }
 
         for (i = 0; i < lRows + 2 * lCols; i++){
-          if (uselessIneqs[i] > zerotol){
+          if (uselessIneqs[i] != zerotol){
             w.uselessIneqsIdx.push_back(i);
             w.uselessIneqsVals.push_back(uselessIneqs[i]);
           }
