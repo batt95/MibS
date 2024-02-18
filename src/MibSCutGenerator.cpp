@@ -6891,7 +6891,7 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
             MibSParams::maxEnumerationLocalSearch));
   bool keepOn(true);
 
-
+  // max_k = 0;
   // TODO: add check for the timeLimit
   while(!foundSolution && k <= max_k){
 
@@ -6912,9 +6912,9 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
         (localModel_->bS_->isIntegral_)) {
       // This point MUST be separated so call the TypeOptSol 
       // if TypeLocalSearch failed
-      std::cout << "Local search failed! Trying Watermelon...\n";
+      // std::cout << "Local search failed! Trying Watermelon...\n";
       foundSolution = findLowerLevelSolImprovingDirectionIC(uselessIneqs, 
-                        improvingDir, lpSol, isTimeLimReached);
+                        improvingDir, lpSol);
       
       if (foundSolution) {
         IMPROVING_DIRECTION w;
@@ -6926,15 +6926,18 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
         }
 
         for (i = 0; i < lRows + 2 * lCols; i++){
-          if (uselessIneqs[i] > zerotol){
+          if (uselessIneqs[i] != zerotol){
             w.uselessIneqsIdx.push_back(i);
             w.uselessIneqsVals.push_back(uselessIneqs[i]);
           }
         }
         feasID.push_back(w);
       } else {
-        // This case should never happen
-        assert(0);
+        foundSolution = false;
+        // This case may happen when we are using 
+        // improvingDirections to check Bilevel Feasibility
+        // and does not create issues
+        // assert(0);
       }
   }
 
@@ -6996,6 +6999,8 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
   delete[] currColUb;
   delete G2colOrd;
 
+  localModel_->isCutGenerationDone = true;
+  localModel_->improvingDirectionFound = foundSolution;
 
   return foundSolution;
 }
