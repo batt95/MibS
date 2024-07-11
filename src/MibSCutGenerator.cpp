@@ -631,8 +631,22 @@ MibSCutGenerator::intersectionCuts(BcpsConstraintPool &conPool,
       // }
       // if(localModel_->countIteration_ <= 199){
         // CoinZeroN(lowerLevelSol, lCols);
-      foundSolution = findImprovingDirectionLocalSearch(uselessIneqs, lowerLevelSol, lpSol,
+        MibSTreeNode * node = static_cast<MibSTreeNode *>(localModel_->activeNode_);
+        int depth = node->getDepth();
+        int localSearchLb = localModel_->MibSPar_->entry(MibSParams::useLocalSearchDepthLb);
+        int localSearchUb = localModel_->MibSPar_->entry(MibSParams::useLocalSearchDepthUb);
+
+        // std::cout << "Depth: " << depth << " ";
+
+        if ((localSearchLb < 0 && localSearchUb < 0) ||
+            (depth >= localSearchLb && depth <= localSearchUb)){
+            // std::cout << "Using Local search" << std::endl;
+          foundSolution = findImprovingDirectionLocalSearch(uselessIneqs, lowerLevelSol, lpSol,
                                                    isTimeLimReached);
+        } else {
+          // std::cout << "Using Opt Solution" << std::endl;
+          foundSolution = findLowerLevelSolImprovingDirectionIC(uselessIneqs, lowerLevelSol, lpSol);
+        }
       // std::cout << "k-Swaps\n";
       // for (i = 0; i < lCols; i++){
         // if (lowerLevelSol[i] != 0)
@@ -1561,6 +1575,7 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
     }
     else if(nSolver->isProvenOptimal()){
       const double *optSol = nSolver->getColSolution();
+      CoinDisjointCopyN(optSol, lCols, lowerLevelSol);
       // YX: numerical issue; skip if the lowerLevelSol found is all zero
       for(i = 0; i < lCols; i++){
         if(fabs(lowerLevelSol[i]) > 0){
@@ -1604,11 +1619,11 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
     }
     else{//this case should not happen when we use intersection cut for removing
 	//the optimal solution of relaxation which satisfies integrality requirements
-	//std::cout << "iteration = " << localModel_->countIteration_ << std::endl;
-	//std::cout << "remaining time = " << remainingTime << std::endl;
-	//std::cout << "current time = " << timeLimit - localModel_->broker_->subTreeTimer().getTime() << std::endl;
-	//throw CoinError("The MIP which is solved for ImprovingDirectionIC, cannot be infeasible!",
-	//		"findLowerLevelSolImprovingDirectionIC", "MibSCutGenerator");
+	// std::cout << "iteration = " << localModel_->countIteration_ << std::endl;
+	// std::cout << "remaining time = " << remainingTime << std::endl;
+	// std::cout << "current time = " << timeLimit - localModel_->broker_->subTreeTimer().getTime() << std::endl;
+	// throw CoinError("The MIP which is solved for ImprovingDirectionIC, cannot be infeasible!",
+	// 		"findLowerLevelSolImprovingDirectionIC", "MibSCutGenerator");
     }
 
     localModel_->isCutGenerationDone = true;
@@ -6883,13 +6898,13 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
   std::vector<IMPROVING_DIRECTION> feasID;
   feasID.reserve(MAX_feasID);
 
-  IMPROVING_DIRECTION ID;
-  ID.idx.reserve(3);
-  ID.vals.reserve(3);
-
   int k(1), max_k(localModel_->MibSPar_->entry(
             MibSParams::maxEnumerationLocalSearch));
   bool keepOn(true);
+
+  IMPROVING_DIRECTION ID;
+  ID.idx.reserve(max_k);
+  ID.vals.reserve(max_k);
 
   // max_k = 0;
   // TODO: add check for the timeLimit

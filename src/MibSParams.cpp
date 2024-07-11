@@ -204,6 +204,12 @@ MibSParams::createKeywordList() {
    
    keys_.push_back(make_pair(std::string("MibS_maxFeasImprovingDirections"),
               AlpsParameter(AlpsIntPar, maxFeasImprovingDirections)));
+
+   keys_.push_back(make_pair(std::string("MibS_useLocalSearchDepthLb"),
+            AlpsParameter(AlpsIntPar, useLocalSearchDepthLb)));
+   
+   keys_.push_back(make_pair(std::string("MibS_useLocalSearchDepthUb"),
+            AlpsParameter(AlpsIntPar, useLocalSearchDepthUb)));
    
    keys_.push_back(make_pair(std::string("MibS_useImprovingDirectionPool"),
               AlpsParameter(AlpsIntPar, useImprovingDirectionPool)));
@@ -413,6 +419,10 @@ MibSParams::setDefaultEntries() {
    setEntry(maxEnumerationLocalSearch, PARAM_NOTSET);
 
    setEntry(maxFeasImprovingDirections, PARAM_NOTSET);
+
+   setEntry(useLocalSearchDepthLb, -1);
+
+   setEntry(useLocalSearchDepthUb, -1);
 
    //====================================================
 

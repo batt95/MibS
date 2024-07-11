@@ -776,6 +776,9 @@ MibSTreeNode::process(bool isRoot, bool rampUp)
         // std::cout << "++++ Integer solution: "
         //           << (mibsModel->bS_->isIntegral_ ? "YES" : "NO")
         //           << std::endl;
+        // std::cout << "++++ Locally-optimal solution: "
+        //           << ((!mibsModel->improvingDirectionFound && mibsModel->bS_->isIntegral_) ? "YES" : "NO")
+        //           << std::endl;
         // std::cout << "++++ Bilevel Created: "
         //           << (mibsModel->isBilevelAlreadyCreated ? "YES" : "NO")
         //           << std::endl;

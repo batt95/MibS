@@ -3981,6 +3981,20 @@ MibSModel::adjustParameters()
             // Set a default value
             MibSPar()->setEntry(MibSParams::maxFeasImprovingDirections, 10);
          }
+
+         // Param: "MibS_useLocalSearchDepthLb/Ub"
+         if ((MibSPar_->entry(MibSParams::useLocalSearchDepthLb) > 0 &&
+              MibSPar_->entry(MibSParams::useLocalSearchDepthUb) > 0) &&
+              MibSPar_->entry(MibSParams::useLocalSearchDepthLb) > 
+              MibSPar_->entry(MibSParams::useLocalSearchDepthUb)){
+            // Param not set or invalid.
+            // Disable lb/ub
+            MibSPar()->setEntry(MibSParams::useLocalSearchDepthLb, -1);
+            MibSPar()->setEntry(MibSParams::useLocalSearchDepthUb, -1);
+         }
+
+         std::cout << "Local Search Depth Lb: " << MibSPar_->entry(MibSParams::useLocalSearchDepthLb) << std::endl;
+         std::cout << "Local Search Depth Ub: " << MibSPar_->entry(MibSParams::useLocalSearchDepthUb) << std::endl;
       } else 
       if (paramValue == MibSImprovingDirectionTypeNotSet){
          std::cout << "Improving direction type not set. Turning Opt Solution on." << std::endl;
