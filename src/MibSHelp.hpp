@@ -57,6 +57,8 @@ struct ID_STATISTICS {
     int intCalls;
     int fracCallSuccess;
     int intCallSuccess;
+    int localSearchSuccess;
+    int foundDirectionLS;
 };
 
 #endif

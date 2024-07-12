@@ -6060,6 +6060,8 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
         cutType = MibSIntersectionCutImprovingDirection;
         localModel_->cutStats.intCalls++;
         numCuts += intersectionCuts(conPool, bS->optLowerSolutionOrd_, cutType);
+        if (numCuts == 0 && localModel_->cutStats.foundDirectionLS == 1)
+          localModel_->cutStats.localSearchSuccess--;
         localModel_->cutStats.intCallSuccess += numCuts;
      }
      
@@ -6117,6 +6119,8 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
         cutType = MibSIntersectionCutImprovingDirection;
         localModel_->cutStats.fracCalls++;
         numCuts += intersectionCuts(conPool, bS->optLowerSolutionOrd_, cutType);
+        if (numCuts == 0 && localModel_->cutStats.foundDirectionLS == 1)
+          localModel_->cutStats.localSearchSuccess--;
         localModel_->cutStats.fracCallSuccess += numCuts;
      }
      
@@ -6148,6 +6152,8 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
         cutType = MibSIntersectionCutImprovingDirection;
         localModel_->cutStats.fracCalls++;
         numCuts += intersectionCuts(conPool, bS->optLowerSolutionOrd_, cutType);
+        if (numCuts == 0 && localModel_->cutStats.foundDirectionLS == 1)
+          localModel_->cutStats.localSearchSuccess--;
         localModel_->cutStats.fracCallSuccess += numCuts;
      }
      if (useImprovingSolutionIC == PARAM_ON && ((haveSecondLevelSol &&
@@ -6752,8 +6758,8 @@ void MibSCutGenerator::generateKSwaps(std::vector<IMPROVING_DIRECTION> &feasID,
     // std::cout << "is feasible!\n";
     improvingDir.uselessIneqsIdx.clear();
     improvingDir.uselessIneqsVals.clear();
-    improvingDir.uselessIneqsIdx.reserve(5);
-    improvingDir.uselessIneqsVals.reserve(5);
+    // improvingDir.uselessIneqsIdx.reserve(orig_k);
+    // improvingDir.uselessIneqsVals.reserve(orig_k);
 
     for (i = 0; i < lRows; i++){
       if (lhs[i] > zerotol) {
@@ -6919,6 +6925,13 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
   }
 
   int branchPar = localModel_->MibSPar_->entry(MibSParams::branchStrategy);
+
+  if (foundSolution){
+    localModel_->cutStats.localSearchSuccess++;
+    localModel_->cutStats.foundDirectionLS = 1;
+  } else {
+    localModel_->cutStats.foundDirectionLS = 0;
+  }
 
   if (!foundSolution && 
       (((branchPar == MibSBranchingStrategyLinking) && 

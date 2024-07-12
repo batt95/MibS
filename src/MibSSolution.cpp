@@ -178,7 +178,10 @@ MibSSolution::print(std::ostream& os) const
          << "Improving direction integer calls " << localModel_->cutStats.intCallSuccess 
          << " successful out of " << localModel_->cutStats.intCalls  << std::endl
          << "Improving direction fractional calls " << localModel_->cutStats.fracCallSuccess 
-         << " successful out of " << localModel_->cutStats.fracCalls  << std::endl;
+         << " successful out of " << localModel_->cutStats.fracCalls  << std::endl
+         << "Improving direction Local Search " << localModel_->cutStats.localSearchSuccess  
+         << " successful out of " << (localModel_->cutStats.intCallSuccess + 
+                                     localModel_->cutStats.fracCallSuccess) << std::endl;
       }   
    }
 }
