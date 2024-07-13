@@ -205,7 +205,7 @@ MibSModel::initialize()
   MibSPar_ = new MibSParams;
   //maxAuxCols_ = 0; //FIXME: should make this a parameter
   
-  cutStats = {0, 0, 0, 0, 0, 0, 0};
+  cutStats = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 }
 
 //#############################################################################

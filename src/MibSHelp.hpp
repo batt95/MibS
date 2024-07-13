@@ -52,13 +52,16 @@ struct IMPROVING_DIRECTION {
 };
 
 struct ID_STATISTICS {
-    int enumerated;
     int fracCalls;
     int intCalls;
     int fracCallSuccess;
     int intCallSuccess;
     int localSearchSuccess;
-    int foundDirectionLS;
+    int MILPSuccess;
+    int localSearchCalls;
+    int MILPCalls;
+    double cpuLocalSearch;
+    double cpuMILP;
 };
 
 #endif

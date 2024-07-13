@@ -180,8 +180,11 @@ MibSSolution::print(std::ostream& os) const
          << "Improving direction fractional calls " << localModel_->cutStats.fracCallSuccess 
          << " successful out of " << localModel_->cutStats.fracCalls  << std::endl
          << "Improving direction Local Search " << localModel_->cutStats.localSearchSuccess  
-         << " successful out of " << (localModel_->cutStats.intCallSuccess + 
-                                     localModel_->cutStats.fracCallSuccess) << std::endl;
+         << " successful out of " << localModel_->cutStats.localSearchCalls << std::endl
+         << "Improving direction MILP " << localModel_->cutStats.MILPSuccess  
+         << " successful out of " << localModel_->cutStats.MILPCalls << std::endl
+         << "Local Search CPU time spent: " << localModel_->cutStats.cpuLocalSearch << std::endl
+         << "MILP CPU time spent: " << localModel_->cutStats.cpuMILP << std::endl; 
       }   
    }
 }

@@ -6060,8 +6060,6 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
         cutType = MibSIntersectionCutImprovingDirection;
         localModel_->cutStats.intCalls++;
         numCuts += intersectionCuts(conPool, bS->optLowerSolutionOrd_, cutType);
-        if (numCuts == 0 && localModel_->cutStats.foundDirectionLS == 1)
-          localModel_->cutStats.localSearchSuccess--;
         localModel_->cutStats.intCallSuccess += numCuts;
      }
      
@@ -6119,8 +6117,6 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
         cutType = MibSIntersectionCutImprovingDirection;
         localModel_->cutStats.fracCalls++;
         numCuts += intersectionCuts(conPool, bS->optLowerSolutionOrd_, cutType);
-        if (numCuts == 0 && localModel_->cutStats.foundDirectionLS == 1)
-          localModel_->cutStats.localSearchSuccess--;
         localModel_->cutStats.fracCallSuccess += numCuts;
      }
      
@@ -6152,8 +6148,6 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
         cutType = MibSIntersectionCutImprovingDirection;
         localModel_->cutStats.fracCalls++;
         numCuts += intersectionCuts(conPool, bS->optLowerSolutionOrd_, cutType);
-        if (numCuts == 0 && localModel_->cutStats.foundDirectionLS == 1)
-          localModel_->cutStats.localSearchSuccess--;
         localModel_->cutStats.fracCallSuccess += numCuts;
      }
      if (useImprovingSolutionIC == PARAM_ON && ((haveSecondLevelSol &&
@@ -6822,7 +6816,6 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
                         double *lpSol, bool &isTimeLimReached)
 {
 
-  localModel_->cutStats.enumerated++;
   int i, idx;
   int MAX_feasID(100);
   double zerotol(1e-7);
@@ -6914,6 +6907,7 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
 
   // max_k = 0;
   // TODO: add check for the timeLimit
+  double startTime(localModel_->broker_->subTreeTimer().getTime());
   while(!foundSolution && k <= max_k){
 
     generateKSwaps(feasID, ID, lCols, k, 0, k, 
@@ -6923,14 +6917,17 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
     foundSolution = (feasID.size() > 0);
     k++;
   }
+  double endTime(localModel_->broker_->subTreeTimer().getTime());
+
+  double elapsedTime = endTime - startTime;
+
+  localModel_->cutStats.cpuLocalSearch += elapsedTime;
 
   int branchPar = localModel_->MibSPar_->entry(MibSParams::branchStrategy);
 
+  localModel_->cutStats.localSearchCalls++;
   if (foundSolution){
     localModel_->cutStats.localSearchSuccess++;
-    localModel_->cutStats.foundDirectionLS = 1;
-  } else {
-    localModel_->cutStats.foundDirectionLS = 0;
   }
 
   if (!foundSolution && 
@@ -6941,10 +6938,19 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
       // This point MUST be separated so call the TypeOptSol 
       // if TypeLocalSearch failed
       // std::cout << "Local search failed! Trying Watermelon...\n";
+      startTime = localModel_->broker_->subTreeTimer().getTime();
+
       foundSolution = findLowerLevelSolImprovingDirectionIC(uselessIneqs, 
                         improvingDir, lpSol);
+
+      endTime = localModel_->broker_->subTreeTimer().getTime();
+
+      localModel_->cutStats.cpuMILP += endTime - startTime;
+
+      localModel_->cutStats.MILPCalls++;
       
       if (foundSolution) {
+        localModel_->cutStats.MILPSuccess++;
         IMPROVING_DIRECTION w;
         for (i = 0; i < lCols; i++){
           if (improvingDir[i] != zerotol){
