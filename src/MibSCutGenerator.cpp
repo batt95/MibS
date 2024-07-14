@@ -615,9 +615,22 @@ MibSCutGenerator::intersectionCuts(BcpsConstraintPool &conPool,
     CoinZeroN(lowerLevelSol, lCols);
 		isTimeLimReached = false;
     bool foundSolution(false);
+    double startTime, endTime;
     if (improvingDirectionType == MibSImprovingDirectionTypeOptSol) {
       // if(localModel_->countIteration_ <= 199){
+      startTime = localModel_->broker_->subTreeTimer().getTime();
+
       foundSolution = findLowerLevelSolImprovingDirectionIC(uselessIneqs, lowerLevelSol, lpSol);
+
+      endTime = localModel_->broker_->subTreeTimer().getTime();
+
+      localModel_->cutStats.cpuMILP += endTime - startTime;
+
+      localModel_->cutStats.MILPCalls++;
+
+      if (foundSolution) {
+        localModel_->cutStats.MILPSuccess++;
+      }
       // std::cout << "Watermelon\n";
       // for (i = 0; i < lCols; i++){
         // if (lowerLevelSol[i] != 0)
@@ -645,7 +658,19 @@ MibSCutGenerator::intersectionCuts(BcpsConstraintPool &conPool,
                                                    isTimeLimReached);
         } else {
           // std::cout << "Using Opt Solution" << std::endl;
+          startTime = localModel_->broker_->subTreeTimer().getTime();
+
           foundSolution = findLowerLevelSolImprovingDirectionIC(uselessIneqs, lowerLevelSol, lpSol);
+
+          endTime = localModel_->broker_->subTreeTimer().getTime();
+
+          localModel_->cutStats.cpuMILP += endTime - startTime;
+
+          localModel_->cutStats.MILPCalls++;
+
+          if (foundSolution) {
+            localModel_->cutStats.MILPSuccess++;
+          }
         }
       // std::cout << "k-Swaps\n";
       // for (i = 0; i < lCols; i++){
