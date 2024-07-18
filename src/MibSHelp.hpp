@@ -34,6 +34,7 @@ struct IMPROVING_DIRECTION {
     std::vector<double> uselessIneqsVals;
     double quality;
     double numIneqs;
+    double objVal;
     
     bool operator<(const IMPROVING_DIRECTION& other) const {
         if (idx.size() != other.idx.size())

@@ -44,6 +44,14 @@ class MibSCutGenerator : public BlisConGenerator {
 
    /****************************************************************/
    //  feb223
+   void generateNeighbors(std::vector<IMPROVING_DIRECTION> &feasID,
+                        double *w, double objVal,
+                        CoinPackedMatrix *G2, double *G2w, double *rhs,
+                        double *wLb, double *wUb,
+                        int *ordlColIndices, int k, int currColIdx,
+                        bool goingUp, bool goingDown, bool firstCallThisVar,
+                        bool &keepOn);
+
    void generateKSwaps(std::vector<IMPROVING_DIRECTION> &feasID,
                     IMPROVING_DIRECTION &improvingDir,
                     int n, int k, int index, int size, 

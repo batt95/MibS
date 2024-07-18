@@ -6693,6 +6693,197 @@ void printDirection(IMPROVING_DIRECTION w){
   std::cout << "uselessIneqs: " << w.numIneqs << ", qual: " << w.quality << "\n";
 }
 
+void MibSCutGenerator::generateNeighbors(std::vector<IMPROVING_DIRECTION> &feasID,
+                        double *w, double objVal,
+                        CoinPackedMatrix *G2, double *G2w, double *rhs,
+                        double *wLb, double *wUb,
+                        int *ordlColIndices, int k, int currColIdx,
+                        bool goingUp, bool goingDown, bool firstCallThisVar,
+                        bool &keepOn){
+  
+  if (!keepOn) return;
+
+  if (k == 0) return;
+
+  int max_k(localModel_->MibSPar_->entry(
+            MibSParams::maxEnumerationLocalSearch));
+  
+  double zerotol = 1e-5;
+  int lRows(localModel_->getLowerRowNum());
+  int lCols(localModel_->getLowerDim());
+  double *lObjCoeff(localModel_->getLowerObjCoeffs());
+  double lObjSense(localModel_->getLowerObjSense());
+  CoinShallowPackedVector colCoeff;
+  double directions[2];
+  double dir;
+  double quality = 0;
+  int isFeasible = true;
+  int canIncrease = false;
+  int canDecrease = false;
+  int i, currK;
+  int maxFeasIDs = localModel_->MibSPar_->entry(MibSParams::maxFeasImprovingDirections);
+  IMPROVING_DIRECTION imprDir;
+
+  // We need to select a variable 
+  // proceed in order based on the lObjCoeff
+  int var = ordlColIndices[currColIdx];
+    
+  // Can we move var? 
+  if (fabs(wLb[var]) < zerotol && (fabs(wLb[var] - wUb[var]) < zerotol)){
+    // No. Go to next var
+    if (currColIdx + 1 < lCols && k - 1 > 0){
+      generateNeighbors(feasID, w, objVal,
+                        G2, G2w, rhs, wLb, wUb,
+                        ordlColIndices, k - 1, currColIdx + 1,
+                        true, true, true, keepOn);
+    } else return;
+  }
+
+  // Which is the preferred direction?
+  if (lObjSense * lObjCoeff[var] >= -zerotol){
+    directions[0] = -1;
+    directions[1] = 1;
+  } else {
+    directions[0] = 1;
+    directions[1] = -1;
+  }
+
+  if (goingUp && (w[var] + 1 - wUb[var] < zerotol))
+    canIncrease = true;
+  
+  if (goingDown && (w[var] - 1 - wLb[var] > -zerotol))
+    canDecrease = true;
+  
+  double *lhs = new double[lRows];
+  CoinZeroN(lhs, lRows);
+
+  const double* elem = G2->getElements();
+  const int* indices = G2->getIndices();
+
+  const CoinBigIndex last = G2->getVectorLast(var);
+  for (CoinBigIndex j = G2->getVectorFirst(var); j < last; ++j){
+      lhs[indices[j]] = elem[j];
+  }
+
+  // Try both direction. Check the preferred first
+  for (int j = 0; j < 2; j++){  
+    dir = directions[j];
+
+    if ((dir > 0 && canIncrease) || (dir < 0 && canDecrease)){
+      // Is this feasible? 
+      // Add w_i * G2_i to G2w
+      for (i = 0; i < lRows; i++){
+        G2w[i] += dir * lhs[i];
+      }
+
+      for (i = 0; i < lRows; i++){
+        if (G2w[i] - rhs[i] > zerotol){
+          isFeasible = false;
+          break;
+        }
+      }
+
+      // We can increase/decrease w_i of +/-1
+      w[var] += dir;
+      objVal += dir * lObjCoeff[var];
+
+      // for (int i = 0; i < lCols; i++){
+      //   if (fabs(w[i]) > zerotol){
+      //     std::cout << i << " : " << w[i] << " ";
+      //   }
+      // }
+
+      // std::cout << std::endl;
+      // std::cout << "objVal: " << objVal << std::endl;
+
+      if (isFeasible && objVal < -zerotol) {
+        // w is feasible and improving
+        
+        // Fill the improving dir
+        imprDir.idx.reserve(max_k);
+        imprDir.vals.reserve(max_k);
+        imprDir.uselessIneqsIdx.reserve(max_k);
+        imprDir.uselessIneqsVals.reserve(max_k);
+        
+        for (i = 0; i < lCols; i++){
+          if (fabs(w[i]) > zerotol){
+            imprDir.idx.push_back(i);
+            imprDir.vals.push_back(w[i]);
+          }
+        }
+
+        for (i = 0; i < lRows; i++){
+          if (G2w[i] > zerotol) {
+            imprDir.uselessIneqsIdx.push_back(i);
+            imprDir.uselessIneqsVals.push_back(G2w[i]);
+          } 
+        }
+
+        for (i = 0; i < imprDir.vals.size(); i++){
+          if (imprDir.vals[i] > zerotol) {
+            imprDir.uselessIneqsIdx.push_back(imprDir.idx[i] + lRows);
+            imprDir.uselessIneqsVals.push_back(imprDir.vals[i]);
+          }
+          else {
+            imprDir.uselessIneqsIdx.push_back(imprDir.idx[i] + lCols + lRows);
+            imprDir.uselessIneqsVals.push_back(-imprDir.vals[i]);
+          }
+        }
+        
+        // Add in the list of feasible and improving directions
+        if (feasID.size() < maxFeasIDs) {
+          for (i = 0; i < imprDir.uselessIneqsVals.size(); i++){
+            quality += imprDir.uselessIneqsVals[i];
+          }
+          imprDir.quality = quality;
+          imprDir.numIneqs = imprDir.uselessIneqsVals.size();
+          // printDirection(imprDir);
+          feasID.push_back(imprDir);
+          keepOn = true;  
+        } else {
+          keepOn = false;
+        }
+      }
+
+      // Now do recursion
+      // Pass to next variable
+      if (currColIdx + 1 < lCols && k - 1 > 0){
+        generateNeighbors(feasID, w, objVal,
+                        G2, G2w, rhs, wLb, wUb,
+                        ordlColIndices, k - 1, currColIdx + 1,
+                        true, true, true, keepOn);
+      }
+      
+      // Keep increasing/decreasing this variable
+      if (!isFeasible){
+        generateNeighbors(feasID, w, objVal,
+                          G2, G2w, rhs, wLb, wUb,
+                          ordlColIndices, k, currColIdx,
+                          (dir > 0 ? true : false),
+                          (dir < 0 ? true : false),
+                          false, keepOn);
+      }
+
+      // Reset G2w and w for next iteration
+      for (i = 0; i < lRows; i++){
+        G2w[i] -= dir * lhs[i];
+      }
+      w[var] -= dir;
+      objVal -= dir * lObjCoeff[var];
+    }
+  }
+
+  // Recourse with w[var] = 0
+  if (firstCallThisVar && (currColIdx + 1 < lCols)){
+    generateNeighbors(feasID, w, objVal,
+                      G2, G2w, rhs, wLb, wUb,
+                      ordlColIndices, k, currColIdx + 1,
+                      true, true, true, keepOn);
+  }
+  delete[] lhs;
+
+}
+
 void MibSCutGenerator::generateKSwaps(std::vector<IMPROVING_DIRECTION> &feasID,
                     IMPROVING_DIRECTION &improvingDir,
                     int n, int k, int index, int size,
@@ -6797,7 +6988,7 @@ void MibSCutGenerator::generateKSwaps(std::vector<IMPROVING_DIRECTION> &feasID,
         improvingDir.uselessIneqsVals.push_back(1);
       }
     }
-    
+
     // Add in the list of feasible and improving directions
     if (feasID.size() < maxFeasIDs) {
       for (i = 0; i < improvingDir.uselessIneqsVals.size(); i++){
@@ -6805,6 +6996,7 @@ void MibSCutGenerator::generateKSwaps(std::vector<IMPROVING_DIRECTION> &feasID,
       }
       improvingDir.quality = quality;
       improvingDir.numIneqs = improvingDir.uselessIneqsVals.size();
+      // printDirection(improvingDir);
       feasID.push_back(improvingDir);
       quality = 0.0;
       keepOn = true;  
@@ -6843,7 +7035,7 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
 
   int i, idx;
   int MAX_feasID(100);
-  double zerotol(1e-7);
+  double zerotol(1e-7), quality(0);
   bool foundSolution(false);
   int colIndex;
   OsiSolverInterface *oSolver = localModel_->solver();
@@ -6868,7 +7060,16 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
 
   double *currColLb = new double[lCols];
 	double *currColUb = new double[lCols];
-  
+
+  int    *ordlColIndices = new int[lCols];
+
+  for (int i = 0; i < lCols; i++){
+    ordlColIndices[i] = i;
+  }
+
+  std::sort(ordlColIndices, ordlColIndices + lCols, 
+            [&lObjCoeff, lObjSense](size_t i1, size_t i2) 
+            {return lObjSense * lObjCoeff[i1] < lObjSense * lObjCoeff[i2];});
 
   //filling col bounds
   CoinZeroN(currColLb, lCols);
@@ -6932,17 +7133,59 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
 
   // max_k = 0;
   // TODO: add check for the timeLimit
+
+  double *G2w = new double[lRows];
+  double *w   = new double[lCols];
+
+  CoinZeroN(G2w, lRows);
+  CoinZeroN(w, lCols);
+
+  // std::cout << "==================\n";
+  // std::cout << "  k-Swaps\n";
+
+  
+
+  // If the currColLb/Ub are too "large" then
+  // the enumeration can take long to terminate
+  // This is a quick fix
+  for(i = 0; i < lCols; i++){
+    currColLb[i] = CoinMax(currColLb[i], -3.0);
+    currColUb[i] = CoinMin(currColUb[i], 3.0);
+  }
+
   double startTime(localModel_->broker_->subTreeTimer().getTime());
   while(!foundSolution && k <= max_k){
-
-    generateKSwaps(feasID, ID, lCols, k, 0, k, 
-                   G2colOrd, rhs, currColLb, currColUb,
-                   llSol, uselessIneqs, keepOn);
-    
+    generateNeighbors(feasID, w, 0,
+                      G2colOrd, G2w, rhs,
+                      currColLb, currColUb,
+                      ordlColIndices, k, 0,
+                      true, true, true, keepOn);
     foundSolution = (feasID.size() > 0);
     k++;
   }
+
+  foundSolution = (feasID.size() > 0);
+  // if (!foundSolution)
+  //   std::cout << "Local Search failed!\n";
+  // while(!foundSolution && k <= max_k){
+
+  //   generateKSwaps(feasID, ID, lCols, k, 0, k, 
+  //                  G2colOrd, rhs, currColLb, currColUb,
+  //                  llSol, uselessIneqs, keepOn);
+    
+  //   foundSolution = (feasID.size() > 0);
+  //   k++;
+  // }
   double endTime(localModel_->broker_->subTreeTimer().getTime());
+
+  // std::cout << "==================\n";
+  // std::cout << "  k-Neighbors\n";
+  // // keepOn = true;
+
+  
+
+  //  std::cout << "==================\n";
+  // std::cout << "  MILP\n";
 
   double elapsedTime = endTime - startTime;
 
@@ -6954,6 +7197,34 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
   if (foundSolution){
     localModel_->cutStats.localSearchSuccess++;
   }
+
+  startTime = localModel_->broker_->subTreeTimer().getTime();
+
+  // if(findLowerLevelSolImprovingDirectionIC(uselessIneqs, 
+  //                   improvingDir, lpSol)) {
+  //   IMPROVING_DIRECTION w1;
+  //   for (i = 0; i < lCols; i++){
+  //     if (fabs(improvingDir[i]) > zerotol){
+  //       w1.idx.push_back(i);
+  //       w1.vals.push_back(improvingDir[i]);
+  //     }
+  //   }
+
+  //   for (i = 0; i < lRows + 2 * lCols; i++){
+  //     if (fabs(uselessIneqs[i]) > zerotol){
+  //       w1.uselessIneqsIdx.push_back(i);
+  //       w1.uselessIneqsVals.push_back(uselessIneqs[i]);
+  //     }
+  //   }
+
+  //   for (i = 0; i < w1.uselessIneqsVals.size(); i++){
+  //     quality += w1.uselessIneqsVals[i];
+  //   }
+  //   w1.quality = quality;
+  //   w1.numIneqs = w1.uselessIneqsVals.size();
+
+  //   printDirection(w1);
+  // }
 
   if (!foundSolution && 
       (((branchPar == MibSBranchingStrategyLinking) && 
@@ -6978,18 +7249,26 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
         localModel_->cutStats.MILPSuccess++;
         IMPROVING_DIRECTION w;
         for (i = 0; i < lCols; i++){
-          if (improvingDir[i] != zerotol){
+          if (fabs(improvingDir[i]) > zerotol){
             w.idx.push_back(i);
             w.vals.push_back(improvingDir[i]);
           }
         }
 
         for (i = 0; i < lRows + 2 * lCols; i++){
-          if (uselessIneqs[i] != zerotol){
+          if (fabs(uselessIneqs[i]) > zerotol){
             w.uselessIneqsIdx.push_back(i);
             w.uselessIneqsVals.push_back(uselessIneqs[i]);
           }
         }
+
+        for (i = 0; i < w.uselessIneqsVals.size(); i++){
+          quality += w.uselessIneqsVals[i];
+        }
+        w.quality = quality;
+        w.numIneqs = w.uselessIneqsVals.size();
+
+        // printDirection(w);
         feasID.push_back(w);
       } else {
         foundSolution = false;
@@ -7004,7 +7283,7 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
     std::sort(feasID.begin(), feasID.end());
 
     ID = feasID[0];
-    
+    // printDirection(ID);
     for (i = 0; i < ID.vals.size(); i++){
       idx = ID.idx[i];
       improvingDir[idx] = ID.vals[i];
@@ -7057,6 +7336,10 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
   delete[] currColLb;
   delete[] currColUb;
   delete G2colOrd;
+
+  delete[] ordlColIndices;
+  delete[] G2w;
+  delete[] w;
 
   localModel_->isCutGenerationDone = true;
   localModel_->improvingDirectionFound = foundSolution;
