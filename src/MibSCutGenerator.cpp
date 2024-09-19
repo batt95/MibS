@@ -631,19 +631,8 @@ MibSCutGenerator::intersectionCuts(BcpsConstraintPool &conPool,
       if (foundSolution) {
         localModel_->cutStats.MILPSuccess++;
       }
-      // std::cout << "Watermelon\n";
-      // for (i = 0; i < lCols; i++){
-        // if (lowerLevelSol[i] != 0)
-        // std::cout << i << " : " << lowerLevelSol[i] << " ";
-      // }
-      // std::cout << "\n";
     } else 
     if (improvingDirectionType == MibSImprovingDirectionTypeLocalSearch){
-      // if(localModel_->countIteration_ == 250){
-      //   std::cout << "Stop here!\n";
-      // }
-      // if(localModel_->countIteration_ <= 199){
-        // CoinZeroN(lowerLevelSol, lCols);
         MibSTreeNode * node = static_cast<MibSTreeNode *>(localModel_->activeNode_);
         int depth = node->getDepth();
         int localSearchLb = localModel_->MibSPar_->entry(MibSParams::useLocalSearchDepthLb);
@@ -672,12 +661,6 @@ MibSCutGenerator::intersectionCuts(BcpsConstraintPool &conPool,
             localModel_->cutStats.MILPSuccess++;
           }
         }
-      // std::cout << "k-Swaps\n";
-      // for (i = 0; i < lCols; i++){
-        // if (lowerLevelSol[i] != 0)
-        // std::cout << i << " : " << lowerLevelSol[i] << " ";
-      // }
-      // std::cout << "\n";
     }
  	        if (!foundSolution){
 		    delete [] uselessIneqs;
@@ -691,6 +674,9 @@ MibSCutGenerator::intersectionCuts(BcpsConstraintPool &conPool,
                 }                   
 		intersectionFound = getAlphaImprovingDirectionIC(extRay, uselessIneqs, lowerLevelSol,
 							 numStruct, numNonBasic, lpSol, alpha);
+
+          localModel_->cutStats.intersectionSuccess += intersectionFound;
+
 	        delete [] uselessIneqs;
 	        delete [] lowerLevelSol;
 	        break;
@@ -5940,7 +5926,7 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
 {
 
   //FIXME: MAKE THIS MORE SIMPLE
-  int numCuts(0);
+  int numCuts(0), oldNumCuts(0);
 
   int cutStrategy =
     localModel_->MibSPar_->entry(MibSParams::cutStrategy);
@@ -6084,8 +6070,9 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
      if (useImprovingDirectionIC == PARAM_ON){
         cutType = MibSIntersectionCutImprovingDirection;
         localModel_->cutStats.intCalls++;
+        oldNumCuts = numCuts;
         numCuts += intersectionCuts(conPool, bS->optLowerSolutionOrd_, cutType);
-        localModel_->cutStats.intCallSuccess += numCuts;
+        localModel_->cutStats.intCallSuccess += numCuts - oldNumCuts;
      }
      
      if (useHypercubeIC == PARAM_ON){
@@ -6141,8 +6128,9 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
      if (useFractionalCuts && useImprovingDirectionIC == PARAM_ON){
         cutType = MibSIntersectionCutImprovingDirection;
         localModel_->cutStats.fracCalls++;
+        oldNumCuts = numCuts;
         numCuts += intersectionCuts(conPool, bS->optLowerSolutionOrd_, cutType);
-        localModel_->cutStats.fracCallSuccess += numCuts;
+        localModel_->cutStats.fracCallSuccess += numCuts - oldNumCuts;
      }
      
      if (useHypercubeIC == PARAM_ON && haveSecondLevelSol){
@@ -6165,15 +6153,16 @@ MibSCutGenerator::generateConstraints(BcpsConstraintPool &conPool)
      //and should always be false (see BlisTreeNode.cpp)
      return (false);
 
-  }else if (bS->isLowerIntegral_ &&
+  }else if (bS->isLowerIntegral_ ||
             (useFractionalCuts ||
              (useFractionalCutsRootOnly &&
               localModel_->activeNode_->getDepth() == 0))){
      if (useImprovingDirectionIC == PARAM_ON){
         cutType = MibSIntersectionCutImprovingDirection;
         localModel_->cutStats.fracCalls++;
+        oldNumCuts = numCuts;
         numCuts += intersectionCuts(conPool, bS->optLowerSolutionOrd_, cutType);
-        localModel_->cutStats.fracCallSuccess += numCuts;
+        localModel_->cutStats.fracCallSuccess += numCuts - oldNumCuts;
      }
      if (useImprovingSolutionIC == PARAM_ON && ((haveSecondLevelSol &&
            relaxedObjVal > localModel_->bS_->objVal_ + localModel_->etol_) ||
@@ -7140,11 +7129,6 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
   CoinZeroN(G2w, lRows);
   CoinZeroN(w, lCols);
 
-  // std::cout << "==================\n";
-  // std::cout << "  k-Swaps\n";
-
-  
-
   // If the currColLb/Ub are too "large" then
   // the enumeration can take long to terminate
   // This is a quick fix
@@ -7160,32 +7144,14 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
                       currColLb, currColUb,
                       ordlColIndices, k, 0,
                       true, true, true, keepOn);
+    // generateKSwaps(feasID, ID, lCols, k, 0, k, 
+    //                G2colOrd, rhs, currColLb, currColUb,
+    //                llSol, uselessIneqs, keepOn);
     foundSolution = (feasID.size() > 0);
     k++;
   }
-
-  foundSolution = (feasID.size() > 0);
-  // if (!foundSolution)
-  //   std::cout << "Local Search failed!\n";
-  // while(!foundSolution && k <= max_k){
-
-  //   generateKSwaps(feasID, ID, lCols, k, 0, k, 
-  //                  G2colOrd, rhs, currColLb, currColUb,
-  //                  llSol, uselessIneqs, keepOn);
-    
-  //   foundSolution = (feasID.size() > 0);
-  //   k++;
-  // }
-  double endTime(localModel_->broker_->subTreeTimer().getTime());
-
-  // std::cout << "==================\n";
-  // std::cout << "  k-Neighbors\n";
-  // // keepOn = true;
-
   
-
-  //  std::cout << "==================\n";
-  // std::cout << "  MILP\n";
+  double endTime(localModel_->broker_->subTreeTimer().getTime());
 
   double elapsedTime = endTime - startTime;
 
@@ -7199,32 +7165,6 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
   }
 
   startTime = localModel_->broker_->subTreeTimer().getTime();
-
-  // if(findLowerLevelSolImprovingDirectionIC(uselessIneqs, 
-  //                   improvingDir, lpSol)) {
-  //   IMPROVING_DIRECTION w1;
-  //   for (i = 0; i < lCols; i++){
-  //     if (fabs(improvingDir[i]) > zerotol){
-  //       w1.idx.push_back(i);
-  //       w1.vals.push_back(improvingDir[i]);
-  //     }
-  //   }
-
-  //   for (i = 0; i < lRows + 2 * lCols; i++){
-  //     if (fabs(uselessIneqs[i]) > zerotol){
-  //       w1.uselessIneqsIdx.push_back(i);
-  //       w1.uselessIneqsVals.push_back(uselessIneqs[i]);
-  //     }
-  //   }
-
-  //   for (i = 0; i < w1.uselessIneqsVals.size(); i++){
-  //     quality += w1.uselessIneqsVals[i];
-  //   }
-  //   w1.quality = quality;
-  //   w1.numIneqs = w1.uselessIneqsVals.size();
-
-  //   printDirection(w1);
-  // }
 
   if (!foundSolution && 
       (((branchPar == MibSBranchingStrategyLinking) && 
@@ -7268,7 +7208,6 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
         w.quality = quality;
         w.numIneqs = w.uselessIneqsVals.size();
 
-        // printDirection(w);
         feasID.push_back(w);
       } else {
         foundSolution = false;

@@ -205,7 +205,8 @@ MibSModel::initialize()
   MibSPar_ = new MibSParams;
   //maxAuxCols_ = 0; //FIXME: should make this a parameter
   
-  cutStats = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+//   Initialize cutStats
+   memset(&cutStats, 0, sizeof(cutStats));
 }
 
 //#############################################################################
@@ -2360,24 +2361,26 @@ MibSModel::userFeasibleSolution(const double * solution, bool &userFeasible)
   if(0)
     solver()->writeLp("userfeasible");
 
-   if (!isBilevelAlreadyCreated || true){
+   // if (!isBilevelAlreadyCreated || true){
       solType = createBilevel(sol);
-      isBilevelAlreadyCreated = true;
-   }
-
-   if (isCutGenerationDone && !improvingDirectionFound && bS_->isIntegral_){
-      std::cout << "++++ Bilevel Feasible Solution!\n";
-      bS_->shouldPrune_ = true;
-      bS_->isLowerSolved_ = true;
-      bS_->isProvenOptimal_ = true;
-      solType = MibSHeurSol;
-      isHeurSolution = true;
-   } else {
-      bS_->shouldPrune_ = false;
-      bS_->isLowerSolved_ = false;
-      bS_->isProvenOptimal_ = false;
-      solType = MibSNoSol;
-      assert(!isCutGenerationDone || improvingDirectionFound || !bS_->isIntegral_);
+      // isBilevelAlreadyCreated = true;
+   // }
+   
+   if (MibSPar_->entry(MibSParams::useImprovingDirectionOracle)){
+      if (isCutGenerationDone && !improvingDirectionFound && bS_->isIntegral_){
+         std::cout << "++++ Bilevel Feasible Solution!\n";
+         bS_->shouldPrune_ = true;
+         bS_->isLowerSolved_ = true;
+         bS_->isProvenOptimal_ = true;
+         solType = MibSHeurSol;
+         isHeurSolution = true;
+      } else {
+         bS_->shouldPrune_ = false;
+         bS_->isLowerSolved_ = false;
+         bS_->isProvenOptimal_ = false;
+         solType = MibSNoSol;
+         assert(!isCutGenerationDone || improvingDirectionFound || !bS_->isIntegral_);
+      }
    }
    
 
@@ -3948,7 +3951,6 @@ MibSModel::adjustParameters()
                     << "matrix.";
           std::cout << std::endl;
           MibSPar()->setEntry(MibSParams::useImprovingDirectionIC, PARAM_OFF);
-         //  assert(0);
        }
        if (isLowerObjInt_ == false){
           std::cout << "The improving direction intersection cut is only valid "
@@ -3956,7 +3958,6 @@ MibSModel::adjustParameters()
                     << "coefficients.";
           std::cout << std::endl;
           MibSPar()->setEntry(MibSParams::useImprovingDirectionIC, PARAM_OFF);
-         //  assert(0);
        }
     }
     if (MibSPar_->entry(MibSParams::useImprovingDirectionIC) == PARAM_ON){
@@ -4002,6 +4003,16 @@ MibSModel::adjustParameters()
                         MibSImprovingDirectionTypeOptSol);
       }
     }
+   
+   // Setting "useImprovingDirectionOracle" parameter
+   if (MibSPar_->entry(MibSParams::useImprovingDirectionOracle) == PARAM_ON || 
+       MibSPar_->entry(MibSParams::useImprovingDirectionOracle) == PARAM_NOTSET){
+      if (MibSPar_->entry(MibSParams::useImprovingDirectionIC) == PARAM_OFF){
+         std::cout << "Improving direction Oracle can be used only when IDICs are on." << std::endl;
+         MibSPar()->setEntry(MibSParams::useImprovingDirectionOracle,
+                        PARAM_OFF);
+      }
+   }
 
     // Setting "useImprovingDirectionPool" parameter
    if (MibSPar_->entry(MibSParams::useImprovingDirectionIC) == PARAM_OFF ||
@@ -4282,6 +4293,11 @@ MibSModel::printProblemInfo(){
                     << std::endl;
        }
     }
+
+    if (MibSPar_->entry(MibSParams::useImprovingDirectionOracle) ==
+         PARAM_ON){
+         std::cout << "Improving Direction Oracle will be used." << std::endl;
+      }
     
     if (MibSPar_->entry(MibSParams::solveSecondLevelEveryIteration) ==
         PARAM_OFF &&

@@ -61,6 +61,7 @@ struct ID_STATISTICS {
     int MILPSuccess;
     int localSearchCalls;
     int MILPCalls;
+    int intersectionSuccess;
     double cpuLocalSearch;
     double cpuMILP;
 };

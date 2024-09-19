@@ -94,6 +94,7 @@ class MibSParams : public AlpsParameterSet {
      computeBestUBWhenLVarsFixed,
      useLinkingSolutionPool,
      //  feb223
+     useImprovingDirectionOracle,
      useImprovingDirectionPool,
      maxImprovingDirectionPoolSize,
      newPureIntCutDepthLb,

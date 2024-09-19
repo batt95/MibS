@@ -184,7 +184,9 @@ MibSSolution::print(std::ostream& os) const
          << "Improving direction MILP " << localModel_->cutStats.MILPSuccess  
          << " successful out of " << localModel_->cutStats.MILPCalls << std::endl
          << "Local Search CPU time spent: " << localModel_->cutStats.cpuLocalSearch << std::endl
-         << "MILP CPU time spent: " << localModel_->cutStats.cpuMILP << std::endl; 
+         << "MILP CPU time spent: " << localModel_->cutStats.cpuMILP << std::endl
+         << "Interesection found " << localModel_->cutStats.intersectionSuccess << " times out of " 
+         << localModel_->cutStats.MILPSuccess + localModel_->cutStats.localSearchSuccess << std::endl;
       }   
    }
 }

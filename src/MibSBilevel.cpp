@@ -241,7 +241,8 @@ MibSBilevel::createBilevel(CoinPackedVector *sol,
 	}
 
   //step 7
-  if(!shouldPrune_ && false){
+  if(!shouldPrune_ && 
+  	 !(model_->MibSPar_->entry(MibSParams::useImprovingDirectionOracle))){
      if((tagInSeenLinkingPool_ == MibSLinkingPoolTagLowerIsFeasible ||
           tagInSeenLinkingPool_ == MibSLinkingPoolTagUBIsSolved) ||
          (!isContainedInLinkingPool_ &&
@@ -316,27 +317,30 @@ MibSBilevel::checkBilevelFeasibility(bool isRoot)
 	}
     }
 
-	// If cut generation is done and improving direction was found
-	// solution is bilevel feasible
-	if (model_->isCutGenerationDone && 
+	if (model_->MibSPar_->entry(MibSParams::useImprovingDirectionOracle)){
+		// If solution is integral, 
+		// cut generation is done and improving direction was not found
+		// the solution is bilevel feasible
+		if (model_->isCutGenerationDone && 
 		!model_->improvingDirectionFound && isIntegral_)
-	{
-		isLowerSolved_ = true;
-		isProvenOptimal_ = true;
-		shouldPrune_ = true;
-		storeSol = MibSHeurSol;
-	} else {
-		isLowerSolved_ = false;
-		isProvenOptimal_ = false;
-		storeSol = MibSNoSol;
-	}
+		{
+			isLowerSolved_ = true;
+			isProvenOptimal_ = true;
+			shouldPrune_ = true;
+			storeSol = MibSHeurSol;
+		} else {
+			isLowerSolved_ = false;
+			isProvenOptimal_ = false;
+			storeSol = MibSNoSol;
+		}
 
-	if (model_->isCutGenerationDone){
-		model_->isCutGenerationDone = false;
-		model_->countIteration_--;
-	}
+		if (model_->isCutGenerationDone){
+			model_->isCutGenerationDone = false;
+			model_->countIteration_--;
+		}
 
-	goto TERM_CHECKBILEVELFEAS;
+		goto TERM_CHECKBILEVELFEAS;
+	}
 
 	if (!isContainedInLinkingPool_)
 	{

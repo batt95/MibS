@@ -210,6 +210,9 @@ MibSParams::createKeywordList() {
    
    keys_.push_back(make_pair(std::string("MibS_useLocalSearchDepthUb"),
             AlpsParameter(AlpsIntPar, useLocalSearchDepthUb)));
+
+   keys_.push_back(make_pair(std::string("MibS_useImprovingDirectionOracle"),
+              AlpsParameter(AlpsIntPar, useImprovingDirectionOracle)));
    
    keys_.push_back(make_pair(std::string("MibS_useImprovingDirectionPool"),
               AlpsParameter(AlpsIntPar, useImprovingDirectionPool)));
@@ -445,6 +448,8 @@ MibSParams::setDefaultEntries() {
    setEntry(useLinkingSolutionPool, PARAM_ON);
 
    // feb223
+
+   setEntry(useImprovingDirectionOracle, PARAM_OFF);
 
    setEntry(useImprovingDirectionPool, PARAM_NOTSET);
 
