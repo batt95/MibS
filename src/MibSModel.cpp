@@ -4407,3 +4407,27 @@ MibSModel::printProblemInfo(){
     //   writeParameters(std::cout);
     //}
 }
+
+void MibSModel::printStatistics(){
+   std::cout << "Number of problems (VF) solved = " << counterVF_ << std::endl;
+   std::cout << "Number of problems (UB) solved = " << counterUB_ << std::endl;
+   std::cout << "Time for solving problem (VF) = " << timerVF_ << std::endl;
+   std::cout << "Time for solving problem (UB) = " << timerUB_ << std::endl;
+   
+   if (MibSPar_->entry(MibSParams::useImprovingDirectionIC) == PARAM_ON) {
+      std::cout 
+      << "================================================" << std::endl
+      << "Improving direction integer calls " << cutStats.intCallSuccess 
+      << " successful out of " << cutStats.intCalls  << std::endl
+      << "Improving direction fractional calls " << cutStats.fracCallSuccess 
+      << " successful out of " << cutStats.fracCalls  << std::endl
+      << "Improving direction Local Search " << cutStats.localSearchSuccess  
+      << " successful out of " << cutStats.localSearchCalls << std::endl
+      << "Improving direction MILP " << cutStats.MILPSuccess  
+      << " successful out of " << cutStats.MILPCalls << std::endl
+      << "Local Search CPU time spent: " << cutStats.cpuLocalSearch << std::endl
+      << "MILP CPU time spent: " << cutStats.cpuMILP << std::endl
+      << "Interesection found " << cutStats.intersectionSuccess << " times out of " 
+      << cutStats.MILPSuccess + cutStats.localSearchSuccess << std::endl;
+   }
+}

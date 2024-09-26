@@ -737,6 +737,10 @@ public:
 
     double interdictionBound();
 
+    // feb223
+    /** Print Statistic even when ALPS does not find a solution **/
+    void printStatistics();
+
 private:
 
     /** Initialize the object data **/

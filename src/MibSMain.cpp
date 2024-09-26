@@ -93,10 +93,13 @@ int main(int argc, char* argv[])
             broker.printBestSolution(ptr_solnFile);
          }
          broker.printBestSolution();
+         model.printStatistics();
       }else{
          std::cout << "Solver not invoked due to parameter settings. Exiting..."<< std::endl;
       }
-      broker.printBestSolution();
+      // broker.printBestSolution();
+
+      
 
     }
     catch(CoinError& er) {

@@ -166,28 +166,28 @@ MibSSolution::print(std::ostream& os) const
       }
    }
 
-   if(&os == &std::cout){
-      std::cout << "Number of problems (VF) solved = " << localModel_->counterVF_ << std::endl;
-      std::cout << "Number of problems (UB) solved = " << localModel_->counterUB_ << std::endl;
-      std::cout << "Time for solving problem (VF) = " << localModel_->timerVF_ << std::endl;
-      std::cout << "Time for solving problem (UB) = " << localModel_->timerUB_ << std::endl;
+   // if(&os == &std::cout){
+   //    std::cout << "Number of problems (VF) solved = " << localModel_->counterVF_ << std::endl;
+   //    std::cout << "Number of problems (UB) solved = " << localModel_->counterUB_ << std::endl;
+   //    std::cout << "Time for solving problem (VF) = " << localModel_->timerVF_ << std::endl;
+   //    std::cout << "Time for solving problem (UB) = " << localModel_->timerUB_ << std::endl;
       
-      if (localModel_->MibSPar_->entry(MibSParams::useImprovingDirectionIC) == PARAM_ON) {
-         std::cout 
-         << "================================================" << std::endl
-         << "Improving direction integer calls " << localModel_->cutStats.intCallSuccess 
-         << " successful out of " << localModel_->cutStats.intCalls  << std::endl
-         << "Improving direction fractional calls " << localModel_->cutStats.fracCallSuccess 
-         << " successful out of " << localModel_->cutStats.fracCalls  << std::endl
-         << "Improving direction Local Search " << localModel_->cutStats.localSearchSuccess  
-         << " successful out of " << localModel_->cutStats.localSearchCalls << std::endl
-         << "Improving direction MILP " << localModel_->cutStats.MILPSuccess  
-         << " successful out of " << localModel_->cutStats.MILPCalls << std::endl
-         << "Local Search CPU time spent: " << localModel_->cutStats.cpuLocalSearch << std::endl
-         << "MILP CPU time spent: " << localModel_->cutStats.cpuMILP << std::endl
-         << "Interesection found " << localModel_->cutStats.intersectionSuccess << " times out of " 
-         << localModel_->cutStats.MILPSuccess + localModel_->cutStats.localSearchSuccess << std::endl;
-      }   
-   }
+   //    if (localModel_->MibSPar_->entry(MibSParams::useImprovingDirectionIC) == PARAM_ON) {
+   //       std::cout 
+   //       << "================================================" << std::endl
+   //       << "Improving direction integer calls " << localModel_->cutStats.intCallSuccess 
+   //       << " successful out of " << localModel_->cutStats.intCalls  << std::endl
+   //       << "Improving direction fractional calls " << localModel_->cutStats.fracCallSuccess 
+   //       << " successful out of " << localModel_->cutStats.fracCalls  << std::endl
+   //       << "Improving direction Local Search " << localModel_->cutStats.localSearchSuccess  
+   //       << " successful out of " << localModel_->cutStats.localSearchCalls << std::endl
+   //       << "Improving direction MILP " << localModel_->cutStats.MILPSuccess  
+   //       << " successful out of " << localModel_->cutStats.MILPCalls << std::endl
+   //       << "Local Search CPU time spent: " << localModel_->cutStats.cpuLocalSearch << std::endl
+   //       << "MILP CPU time spent: " << localModel_->cutStats.cpuMILP << std::endl
+   //       << "Interesection found " << localModel_->cutStats.intersectionSuccess << " times out of " 
+   //       << localModel_->cutStats.MILPSuccess + localModel_->cutStats.localSearchSuccess << std::endl;
+   //    }   
+   // }
 }
 
