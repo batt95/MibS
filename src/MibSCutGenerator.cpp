@@ -48,6 +48,8 @@
 #include "OsiSymSolverInterface.hpp"
 #endif
 
+#define DEBUG_IMPROV_DIR
+
 //#############################################################################
 MibSCutGenerator::MibSCutGenerator(MibSModel *mibs)
 {
@@ -617,7 +619,7 @@ MibSCutGenerator::intersectionCuts(BcpsConstraintPool &conPool,
     bool foundSolution(false);
     double startTime, endTime;
     if (improvingDirectionType == MibSImprovingDirectionTypeOptSol) {
-      // if(localModel_->countIteration_ <= 199){
+
       startTime = localModel_->broker_->subTreeTimer().getTime();
 
       foundSolution = findLowerLevelSolImprovingDirectionIC(uselessIneqs, lowerLevelSol, lpSol);
@@ -1326,7 +1328,7 @@ MibSCutGenerator::solveModelIC(double *uselessIneqs, double *ray, double *rhs,
 //#############################################################################
 bool
 MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, double *lowerLevelSol,
-						double* lpSol)
+						double* lpSol, double* fixMe)
 {
     std::string feasCheckSolver(localModel_->MibSPar_->entry
 				(MibSParams::feasCheckSolver));
@@ -1510,6 +1512,7 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
 	else{
 	    rhs = origRowUb[rowIndex];
 	}
+  
 	nSolver->setRowUpper(2 * i + 1, rhs - lCoeffsTimesLpSol[i]);
     }
 
@@ -1522,6 +1525,21 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
   nSolver->setColUpper(i, floor(origColUb[colIndex] - value +
                                 localModel_->etol_));
     }
+
+  // DEBUG: fix a vector w and check if it is a IFD
+#ifdef DEBUG_IMPROV_DIR
+    int currNumRows = nSolver->getNumRows();
+    int *toDelRows = new int[lCols];
+    if (fixMe != nullptr){
+      addedRow.clear();
+      for(i = 0; i < lCols; i++){
+        addedRow.insert(i, 1);
+        nSolver->addRow(addedRow, fixMe[i], fixMe[i]);
+        addedRow.clear();
+        toDelRows[i] = currNumRows + i;
+      }
+    }
+#endif
 
     remainingTime = timeLimit - localModel_->broker_->subTreeTimer().getTime();
     remainingTime = CoinMax(remainingTime, 5.00);
@@ -1577,7 +1595,13 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
 
     // nSolver->writeLp("water");
     nSolver->branchAndBound();
-
+#ifdef DEBUG_IMPROV_DIR
+    if (fixMe != nullptr){
+      nSolver->deleteRows(lCols, toDelRows);
+    }
+    delete [] toDelRows;
+    // nSolver->writeLp("water");
+#endif
     if(((feasCheckSolver == "SYMPHONY") && (sym_is_time_limit_reached
 					   (dynamic_cast<OsiSymSolverInterface *>
 					    (nSolver)->getSymphonyEnvironment())))
@@ -1628,7 +1652,12 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
         }
       }
     }
-    else{//this case should not happen when we use intersection cut for removing
+    else{
+      if (fixMe != nullptr){
+        nSolver->writeLp("water");
+        throw CoinError("IFD from LocalSearch is not a feasible solution!",
+			"findLowerLevelSolImprovingDirectionIC", "MibSCutGenerator");
+      }//this case should not happen when we use intersection cut for removing
 	//the optimal solution of relaxation which satisfies integrality requirements
 	// std::cout << "iteration = " << localModel_->countIteration_ << std::endl;
 	// std::cout << "remaining time = " << remainingTime << std::endl;
@@ -7162,6 +7191,56 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
   localModel_->cutStats.localSearchCalls++;
   if (foundSolution){
     localModel_->cutStats.localSearchSuccess++;
+
+#ifdef DEBUG_IMPROV_DIR
+
+    std::sort(feasID.begin(), feasID.end());
+
+    ID = feasID[0];
+    // printDirection(ID);
+    for (i = 0; i < ID.vals.size(); i++){
+      idx = ID.idx[i];
+      improvingDir[idx] = ID.vals[i];
+    }
+
+    for (i = 0; i < ID.uselessIneqsIdx.size(); i++){
+      idx = ID.uselessIneqsIdx[i];
+      uselessIneqs[idx] = ID.uselessIneqsVals[i];
+    }
+
+    double* milpDir = new double[lCols];
+    double* milpUselessIneqs = new double[lRows + 2 * lCols];
+    int milpFoundSol = 0;
+    CoinZeroN(milpDir, lCols);
+    CoinZeroN(milpUselessIneqs, lRows + 2 * lCols);
+
+    milpFoundSol = findLowerLevelSolImprovingDirectionIC(milpUselessIneqs, 
+                        milpDir, lpSol, improvingDir);
+    
+    if (milpFoundSol){
+      // Check uselessIneqs are the same
+      for (int i = 0; i < lCols; i++){
+        if (fabs(improvingDir[i] - milpDir[i]) > 1e-5){
+          std::cout << "Different directions!\n";
+          throw CoinError("Different improving directions!",
+			"findImprovingDirectionLocalSearch", "MibSCutGenerator");
+        }
+      }
+      for (int i = 0; i < lRows + 2 * lCols; i++){
+        if (fabs(uselessIneqs[i] - milpUselessIneqs[i]) > 1e-5){
+          throw CoinError("Different useless inequalities!",
+			"findImprovingDirectionLocalSearch", "MibSCutGenerator");
+        }
+      }
+    } else{
+      // MILP is infeasible => direction from LS is not Feasible!
+      throw CoinError("Direction from Local Search not a feasible direction!",
+			"findImprovingDirectionLocalSearch", "MibSCutGenerator");
+    }
+
+    delete [] milpDir;
+    delete [] milpUselessIneqs;
+#endif
   }
 
   startTime = localModel_->broker_->subTreeTimer().getTime();
