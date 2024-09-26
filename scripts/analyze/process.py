@@ -10,7 +10,7 @@
 import sys
 import os
 import collections
-import shutil
+import shutil, time
 import subprocess
 import numpy as np
 import pandas as pd
@@ -44,11 +44,16 @@ def parseOutput(outputDir, versions, scenarios, writeCSV=True, filename="summary
         "gap": "optimality gap",
         "ul_int_var": "integer UL Variables",
         "ll_int_var": "integer LL Variables",
-        "num_cuts": "Called MIBS cut generator",
+        "cg_calls": "Called MIBS cut generator",
         "infeasible": "infeasible",
         "chk_feas_time" : "Checking feasibility",
-        "int_cuts" : "Improving direction integer calls",
-        "frac_cuts": "Improving direction fractional calls"
+        "int_idic" : "Improving direction integer calls",
+        "frac_idic": "Improving direction fractional calls",
+        "ls_calls": "Improving direction Local Search",
+        "milp_calls": "Improving direction MILP",
+        "ls_cpu": "Local Search CPU time spent",
+        "milp_cpu": "MILP CPU time spent",
+        "idic_intersect": "Interesection found"
     }
 
     results = collections.defaultdict(list)
@@ -70,6 +75,7 @@ def parseOutput(outputDir, versions, scenarios, writeCSV=True, filename="summary
             with os.scandir(resultDir) as dataset_it:
                 for d_entry in dataset_it:
                     if d_entry.name not in dataSets:
+                        # Not a dataset directory
                         continue
                     # iterate over files in the folder
                     with os.scandir(d_entry.path) as output_it:
@@ -88,58 +94,88 @@ def parseOutput(outputDir, versions, scenarios, writeCSV=True, filename="summary
 
                                 incomplete = True  # mark incomplete output file
                                 nosoln = False  # mark no soluntion found
-                                results['num_cuts'].append(0)
-                                results['cut_time'].append(0)
+                                # Basic data
+                                results['incomplete'].append(True)
+                                results['solved'].append(False)
                                 results['root_bound'].append(10000000)
                                 results['100_bound'].append(10000000)
-                                results['num_int_idic'].append(0)
-                                results['num_int_lv_idic'].append(0)
-                                results['num_frac_idic'].append(0)
-                                results['num_int_lv_idic_fail'].append(0)
-                                results['num_frac_idic_fail'].append(0)
-                                results['cg_called'].append(0)
-                                results['cg_failed'].append(0)
-                                results['cg_fail_rate'].append(0)
-                                results['num_idic'].append(0)
-                                results['depth_idic'].append(-1)
-                                results["vf_solved"].append(-1)
-                                results["ub_solved"].append(-1)
-                                if '1.0-opt' not in versions: 
-                                    results["vf_time"].append(-1)
-                                    results["ub_time"].append(-1)
                                 results["objval"].append(-1000000)
                                 results["gap"].append(1000000)
+                                results["cpu"].append(3600)
+                                results['nodes'].append(10000000)
+                                
+                                # CG data
+                                results['num_cuts'].append(0)                   # Tot. num cuts
+                                results['cg_called'].append(0)                  # CG calls
+                                results['cg_failed'].append(0)                  # CG failed: cg_called - num_cuts
+                                results['cg_fail_rate'].append(0)               # cg_failed / cg_called
+                                results['cg_time'].append(0)                    # CG CPU time
+                                # IDICs Data
+                                results['num_idic'].append(0)                   # num_int_idic + num_frac_idic
+                                results['num_int_idic'].append(0)               # Num Int IDIC
+                                results['num_frac_idic'].append(0)              # Num frac IDIC
+                                results['idic_called'].append(0)
+                                results['idic_failed'].append(0) 
+                                results['idic_fail_rate'].append(0) 
+                                results['int_idic_called'].append(0)            # Int IDIC CG
+                                results['int_idic_failed'].append(0)            # Num CG Int IDIC failed: int_idic_called - num_int_idic
+                                results['int_idic_fail_rate'].append(0)
+                                results['frac_idic_called'].append(0)           # frac IDIC CG
+                                results['frac_idic_failed'].append(0)           # Num CG frac IDIC failed: frac_idic_called - num_frac_idic
+                                results['frac_idic_fail_rate'].append(0)
+                                # IFDs
+                                results['idic_milp_called'].append(0) 
+                                results['idic_milp_found'].append(0) 
+                                results['idic_milp_failed'].append(0)
+                                results['idic_milp_fail_rate'].append(0) 
+                                results['idic_ls_called'].append(0)
+                                results['idic_ls_found'].append(0)
+                                results['idic_ls_failed'].append(0)
+                                results['idic_ls_fail_rate'].append(0)
+                                results['idic_cg_time'].append(0)               # Tot CPU Time finding IFD
+                                results['idic_ls_time'].append(0)               # CPU Time finding IFD with LS
+                                results['idic_milp_time'].append(0)             # CPU Time finding IFD with MILP
+                                results['idic_intersection_called'].append(0)
+                                results['idic_intersection_found'].append(0)
+                                results['idic_intersection_fail_rate'].append(0)
+        
+                                # Feasibility Check
+                                results["vf_solved"].append(-1)             
+                                results["ub_solved"].append(-1)
+                                results["vf_time"].append(0)
+                                results["ub_time"].append(0)
+                                results['chk_feas_time'].append(0)          # Tot Check Feas time: vf_time + ub_time
+                                
 
                                 # read value for each field from file
                                 with open(o_entry.path, "r") as file:
                                     for line in file.read().splitlines():
+                                        
                                         if (len(line.split()) > 1 and line.split()[0] == '0'):
                                             if len(line.split()) == 4:
                                                 results["root_bound"][-1] = float(line.split()[1])
                                             else:
                                                 results["root_bound"][-1] = float(line.split()[2])
-                                        if (len(line.split()) > 0 and line.split()[0] == '100'):
+                                        
+                                        elif (len(line.split()) > 0 and line.split()[0] == '100'):
                                             results["100_bound"][-1] = float(line.split()[2])
-                                        if keywords["solved"] in line:
+                                        
+                                        elif keywords["solved"] in line:
                                             nosoln = True
-                                            results["solved"].append(False)
+                                            results["solved"][-1] = False
                                             print(
                                                 "No solution found instance:",
                                                 o_entry.name, s
                                             )
 
-                                        elif (
-                                            keywords["nodes"] in line
-                                            or keywords["nodes_full_proc"] in line
-                                        ):
-                                            results["nodes"].append(
-                                                int(line.split(":")[1])
-                                            )
+                                        elif (keywords["nodes"] in line
+                                            or keywords["nodes_full_proc"] in line):
+                                            results["nodes"][-1] = int(line.split(":")[1])
 
-                                        elif keywords["cpu"] in line:
-                                            results["cpu"].append(
-                                                float((line.split(":")[1]).split()[0])
-                                            )
+                                        elif keywords["cpu"] in line and "Local Search" not in line:
+                                            incomplete = False
+                                            results["incomplete"][-1] = False
+                                            results["cpu"][-1] = float((line.split(":")[1]).split()[0])
 
                                         elif keywords["vf_solved"] in line:
                                             results["vf_solved"][-1] = int(line.split("=")[1])
@@ -163,72 +199,59 @@ def parseOutput(outputDir, versions, scenarios, writeCSV=True, filename="summary
                                             if "infinity" in line:
                                                 results["gap"][-1] = 1000000
                                                 # no soln found
-                                                # results['solved'].append(False)
+                                                results['solved'][-1] = False
                                             else:
-                                                if nosoln:
-                                                    print("Gap is incorrectly reported")
-                                                solgap = float(
-                                                    line.split(" ")[5].strip("%\n")
-                                                )
+                                                solgap = float(line.split(" ")[5].strip("%\n"))
                                                 results["gap"][-1] = solgap
                                                 # mark unsolved instances in given time limit
                                                 if nosoln == False:
                                                     if solgap - 0.0 < etol:
-                                                        results["solved"].append(True)
+                                                        results['solved'][-1] = True
                                                     else:
-                                                        results["solved"].append(False)
-                                        elif keywords['frac_idic'] in line:
-                                            results['num_frac_idic'][-1] += 1
-                                            results['num_idic'][-1] += 1
-                                            depth = int(line.split()[4])
-                                            results['depth_idic'][-1] = ((
-                                                results['depth_idic'][-1]*(
-                                                    results['num_idic'][-1] - 1
-                                                    ) + depth)/results['num_idic'][-1])
-                                        elif keywords['int_lv_idic'] in line:
-                                            results['num_int_lv_idic'][-1] += 1
-                                            results['num_idic'][-1] += 1
-                                            depth = int(line.split()[5])
-                                            results['depth_idic'][-1] = ((
-                                                results['depth_idic'][-1]*(
-                                                    results['num_idic'][-1] - 1
-                                                    ) + depth)/results['num_idic'][-1])
-                                        elif keywords['int_idic'] in line:
-                                            results['num_int_idic'][-1] += 1
-                                            results['num_idic'][-1] += 1
-                                            depth = int(line.split()[4])
-                                            results['depth_idic'][-1] = ((
-                                                results['depth_idic'][-1]*(
-                                                    results['num_idic'][-1] - 1
-                                                    ) + depth)/results['num_idic'][-1])
-                                        elif keywords['int_lv_idic_failed'] in line:
-                                            results['num_int_lv_idic_fail'][-1]+=1
-                                            results['cg_failed'][-1] += 1
-                                        elif keywords['frac_idic_failed'] in line:
-                                            results['num_frac_idic_fail'][-1]+=1
-                                            results['cg_failed'][-1] += 1
+                                                        results['solved'][-1] = False
 
-                                        elif keywords["chk_feas_time"] in line:
-                                           results['chk_feas_time'].append(float(line.split(' ')[-2]))
-                                        #
-                                        # elif keywords[11] in line:
-                                        #    results['ll_int_var'].append(int(line.split(':')[1]))
-                                        elif keywords["num_cuts"] in line:
-                                            found = True
+                                        # elif keywords["chk_feas_time"] in line:
+                                        #    results['chk_feas_time'][-1] = float(line.split(' ')[-2])
+
+                                        elif keywords["cg_calls"] in line:
                                             results["num_cuts"][-1] = int(line.split(" ")[8])
-                                            results["cut_time"][-1] = float(line.split(" ")[12])
+                                            results["cg_time"][-1] = float(line.split(" ")[12])
                                             results["cg_called"][-1] = float(line.split(" ")[5])
 					
-                                        # elif keywords["int_cuts"] in line:
-                                        #     results["int_cuts_tot"].append(int(line.split(' ')[-1]))
-                                        #     results["int_cuts_succ"].append(int(line.split(' ')[-5]))
+                                        elif keywords["int_idic"] in line:
+                                            results["int_idic_called"][-1] = (int(line.split(' ')[-1]))
+                                            results["num_int_idic"][-1] = (int(line.split(' ')[-5]))
+                                            results["int_idic_failed"][-1] = results["int_idic_called"][-1] - results["num_int_idic"][-1]
 
-                                        # elif keywords["frac_cuts"] in line:
-                                        #     results["frac_cuts_tot"].append(int(line.split(' ')[-1]))
-                                        #     results["frac_cuts_succ"].append(int(line.split(' ')[-5]))
+                                        elif keywords["frac_idic"] in line:
+                                            results["frac_idic_called"][-1] = (int(line.split(' ')[-1]))
+                                            results["num_frac_idic"][-1] = (int(line.split(' ')[-5]))
+                                            results["frac_idic_failed"][-1] = results["frac_idic_called"][-1] - results["num_frac_idic"][-1]
 
+                                        elif keywords["ls_calls"] in line and 'successful' in line:
+                                            results['idic_ls_called'][-1] = int(line.split()[-1])
+                                            results['idic_ls_found'][-1] = int(line.split()[-5])
+                                            results['idic_ls_failed'][-1] = results['idic_ls_called'][-1] - results['idic_ls_found'][-1]
+
+                                        elif keywords["milp_calls"] in line:
+                                            results['idic_milp_called'][-1] = int(line.split()[-1])
+                                            results['idic_milp_found'][-1] = int(line.split()[-5])
+                                            results['idic_milp_failed'][-1] = results['idic_milp_called'][-1] - results['idic_milp_found'][-1]
+
+                                        elif keywords["ls_cpu"] in line:
+                                            results['idic_ls_time'][-1] = float(line.split(':')[-1])
+                                        
+                                        elif keywords["milp_cpu"] in line:
+                                            results['idic_milp_time'][-1] = float(line.split(':')[-1])
+
+                                        elif keywords["idic_intersect"] in line:
+                                            results['idic_intersection_called'][-1] = int(line.split()[-1])
+                                            results['idic_intersection_found'][-1] = int(line.split()[-5])
+                                        
                                         elif keywords["infeasible"] in line:
                                             print("Infeasible instance!")
+
+                                        # filmosi
                                         elif 'STAT;' in line and len(line.split(';')) > 6:
                                             incomplete=False
                                             results["objval"].append(
@@ -257,9 +280,6 @@ def parseOutput(outputDir, versions, scenarios, writeCSV=True, filename="summary
                                         else:
                                             pass
                                 if incomplete:
-                                    results["nodes"].append(1000000000)
-                                    results["cpu"].append(3600)
-                                    results["solved"].append(False)
                                     print(
                                         "Incomplete instance:", o_entry.name, s
                                     )
@@ -277,7 +297,7 @@ def parseOutput(outputDir, versions, scenarios, writeCSV=True, filename="summary
                                     results["cpu"][-1] = .01
 
     for k in results:
-      print (k)
+      print(k)
       print(len(results[k]))
     df_result = pd.DataFrame(results)
 
@@ -288,6 +308,39 @@ def parseOutput(outputDir, versions, scenarios, writeCSV=True, filename="summary
         df_result["chk_feas_time"] = df_result["ub_time"] + df_result["vf_time"]
         df_result["chk_feas_time"] = df_result["chk_feas_time"].astype(float).round(2)
     #df_result["cpu"] = df_result["cpu"].astype(float).round(2)
+
+    # Tot CPU time finding IFDs
+    
+    df_result["idic_cg_time"] = df_result["idic_ls_time"] + df_result["idic_milp_time"]
+    df_result["idic_cg_avg_time"] = df_result["idic_cg_time"] / df_result["idic_called"][df_result["idic_called"] > etol]
+    df_result["idic_cg_avg_time"].fillna(0, inplace=True)
+    with pd.option_context('display.max_rows', None,
+                              'display.max_columns', None,
+                              'display.precision', 3,
+        ):
+        # print(df_result["idic_ls_time"])
+        # print(df_result["idic_milp_time"])
+        print(df_result["idic_called"])
+        # print(df_result["idic_cg_time"])
+        # print(df_result["idic_cg_avg_time"])
+        exit(0)
+
+    # compute percentages
+    df_result["cg_fail_rate"] = df_result["cg_failed"] / df_result["cg_called"][df_result["cg_called"] > etol]
+    df_result["cg_fail_rate"].fillna(0, inplace=True)
+    df_result["idic_fail_rate"] = df_result["idic_failed"] / df_result["idic_called"][df_result["idic_called"] > etol]
+    df_result["idic_fail_rate"].fillna(0, inplace=True)
+    df_result["int_idic_fail_rate"] = df_result["int_idic_failed"] / df_result["int_idic_called"][df_result["int_idic_called"] > etol]
+    df_result["int_idic_fail_rate"].fillna(0, inplace=True)
+    df_result["frac_idic_fail_rate"] = df_result["frac_idic_failed"] / df_result["frac_idic_called"][df_result["frac_idic_called"] > etol]
+    df_result["frac_idic_fail_rate"].fillna(0, inplace=True)
+    df_result["idic_milp_fail_rate"] = df_result["idic_milp_failed"] / df_result["idic_milp_called"][df_result["idic_milp_called"] > etol]
+    df_result["idic_milp_fail_rate"].fillna(0, inplace=True)
+    df_result["idic_ls_fail_rate"] = df_result["idic_ls_failed"] / df_result["idic_ls_called"][df_result["idic_ls_called"] > etol]
+    df_result["idic_ls_fail_rate"].fillna(0, inplace=True)
+    df_result["idic_intersection_fail_rate"] = (df_result["idic_intersection_called"] - df_result["idic_intersection_found"] ) \
+                                                / df_result["idic_intersection_called"][df_result["idic_intersection_called"] > etol]
+    df_result["idic_intersection_fail_rate"].fillna(0, inplace=True)
 
     # write results to .csv file
     if writeCSV:
@@ -335,11 +388,14 @@ def processTable(df, displayCols, writeLTX=False, filename="ltx_tb.txt"):
                     rsltDict[inst].update(
                         {(scn, v, ds, col): df_temp[col].values[0] for col in displayCols}
                 )
+                    rsltDict[inst].update(
+                        {(scn, v, 'all', col): df_temp[col].values[0] for col in displayCols}
+                )
 
     # convert dict to structured df: change to formal column names?
     df_forprint = pd.DataFrame.from_dict(rsltDict, orient="index")
     df_forprint.columns.names = ["scn", "v", "datasets", "fields"]
-    df_forprint = df_forprint.sort_index()
+    # df_forprint = df_forprint.sort_index()
 
     # OPTION 1: print results to a single table: suggest to use when display col number < 2
     # with open('ltx_tb1.txt', 'w') as file:
@@ -620,7 +676,7 @@ def plotBaselineProf(
 
     for col in col_list:
         if col == baseline or col[0] == "virtual_best":
-
+            continue
         #print(col)
         # for each col, compute ratio
         ratios = df[col] / df[baseline]
@@ -814,112 +870,31 @@ def plotBaselineProfSingle(
 
 if __name__ == "__main__":
 
+    # Datasets: names correspond to the key in myrun.py instanceDirs
     dataSets = [
-        # 'MIBLP-XU',
-        # "IBLP-FIS",
-        # 'INTERD-DEN',
-        # 'IBLP-DEN',
-        # 'ZHANG'
-        'DENEGRE',
-        # 'INTER-KP',
-        # 'INT0SUM',
-        # 'SMALL'
-    ]
+            # 'all'
+            "iblpDen",
+            "iblpDen2",
+            "iblpZhang",
+            "iblpZhang2",
+        ]
 
-    # versions = ['1.1', 'ib']
-    # versions = ["1.2-opt", "rev1"]
-    # versions = ["1.2-opt", "1.2-opt-cplex"]
-    # versions = ['1.2+newWS','1.2+5.6']
-    versions = ['ipco']
-    
-    # Output parent path
-    # outputDir = "/home/ted/Projects/MibS/output"
-    # outputDir = "/home/feb223/tests/improvingDir/output"
-    # outputDir = "/Users/feb223/projects/coin/intersectionCuts/test/output"
-    outputDir = "/home/federico/Scrivania/coin/improvingDir/tests"
+    # Version: names correspond to versions in myrun.py
+    versions = ['idBC']
 
+    # Where the results are
+    outputDir = ["/home/feb223/results/MibS"]
+
+    # Scenarios
+    #     keys: correspond to the keys of mibsParamsInputs in myrun.py
+    #     values: is the name to use in plots
     scenarios = {
-        'MIBS' : 'MibS_IDIC',
-        'idB&C-IDIC' : 'idB&C-IDIC' 
-        # 'kSwaps_fracB' : 'ENUM_fracB',
-        # 'kSwaps+IDP_fracB' : 'ENUM+IDP_fracB',
-	    # 'watermelon+IDP_fracB' : 'MILP+IDP_fracB',
-        # 'watermelon_fracB' : 'MILP_fracB'
-        # 'default' : 'Default',
-        # 'default+WS' : 'Default w/ Warm Start',
-        # 'default-frac',
-        #'benders' : 'BendersInterdict (link)',
-        #'benders-frac' : 'BendersInterdict (frac)',
-        #'watermelon+type1-frac' : 'Watermelon+Type1 (frac)',
-        #'watermelon+type1-frac-LV' : 'Watermelon+Type1 (frac+LV)',
-        #'watermelon+type1+incObj-frac' : "Watermelon+Type1+BendBin (frac)",
-        #'watermelon+type1+incObj-frac-LV' : 'Watermelon+Type1+BendBin (frac+LV)',
+        # "MibS_1_2_IDIC_defaultB" : "1.2_default+IDIC (default)",
+        # "MibS_1_2-LS_3-k_3_defaultB" : "1.2_default+IDIC+LS (default)",
+        "idBC-LS_3-k_3_fracB" : "idB&C (frac)",
+        "MibS_IDIC_fracB" : "1.2 only IDICs (frac)",
+        }
 
-        ###### 1.2-cplex-opt
-
-        #'default' : 'Default',
-        #'default+ParallelCplex': 'Default Parallel CPLEX',
-
-        ###### tailoff
-
-        #'default-new-tailoff-05' : 'Default',
-        #'default+frac-new-tailoff' : 'Default (frac+new-tailoff-01)',
-        #'default+link-new-tailoff' : 'Default (link+new-tailoff-01)',
-        #'default+frac-new-tailoff-1' : 'Default (frac+new-tailoff-1)',
-        #'default+link-new-tailoff-1' : 'Default (link+new-tailoff-1)',
-        #'default+frac-new-tailoff-05' : 'Default (frac+new-tailoff-05)',
-        #'default+link-new-tailoff-05' : 'Default (link+new-tailoff-05)',
-        #'default+frac-new-tailoff-005' : 'Default (frac+new-tailoff-005)',
-        #'default+link-new-tailoff-005' : 'Default (link+new-tailoff-005)',
-        #'default+link-new-tailoff-001' : 'Default (link+new-tailoff-001)',
-
-        ###### 1.0-opt
-
-        #'default' : 'Default',
-        
-        ###### 1.1-opt
-
-        #'default' : 'Default',
-        
-        ###### DenRal09
-
-        #'default' : 'Default',
-
-        ###### rev1
-
-        #'fracWatermelon' : 'Frac1 IDIC (link)',
-        #"fracWatermelon-frac" : 'Frac IDIC (frac)',
-        #'genNoGood': 'Generalized No Good (link)',
-        #'genNoGood-frac': 'Generalized No Good (frac)',
-        #'hyper': 'Hypercube IC (link)',
-        #'hyper-frac': 'Hypercube IC (frac)',
-        #"incObj" : "BendersBinary (link)",
-        #'incObj-frac' : "BendersBinary (frac)",
-        #'noCut' : "No Cuts (link)", 
-        #'pureInteger' : 'IntNoGood (link)',
-        #'pureInteger-frac' : 'IntNoGood (frac)',
-        #"type1" : 'ISIC1 Type1 (link)',
-        #"type1-frac" : 'Type1 (frac)',
-        #"type2" : "ISIC1 Type2 (link)",
-        #"type2-frac" : "ISIC1 Type2 (frac)",
-        #'watermelon' : 'Watermelon (link)',
-        #'watermelon+type1-frac' : 'Watermelon+Type1 (frac)',
-        #'watermelon+type1-frac-LV' : 'Watermelon+Type1 (frac+LV)',
-        #'watermelon-frac' : 'Watermelon (frac)',    
-        #"watermelon-frac-LV" : 'Watermelon (frac+LV)',
-        #'fracWatermelon' : 'FracWatermelon (link)',
-        #"fracWatermelon-frac" : 'FracWatermelon (frac)',
-        #"fracWatermelon-frac-cplex" : 'FracWatermelon (frac)',
-        #"type1" : 'Type1 (link)',
-        #"type1-cplex" : 'Type1 (link)',
-        #"type1-frac" : 'Type1 (frac)',
-        #'type1-WS' : 'Type1 (link+WS)',
-        #"type2" : "Type2 (link)",
-        #"type2-frac" : "Type2 (frac)",
-        # 'noCut' : "No Cuts (link)", 
-        #'noCut-WS' : "No Cuts (link+WS)", 
-        # 'interdiction',
-    }
     ################# Process & Save | Load from CSV ###################
     # specify summary file name
     file_csv_out = "summary_"+dataSets[0]+".csv"
@@ -948,35 +923,55 @@ if __name__ == "__main__":
     file_txt = "ltx_tb_cut.txt"
 
     # columns to process and print
+    # Columns to process and print
     displayCols = {
-        "cpu": "CPU Search Time",
-        "nodes": "Number of Processed Nodes",
+        # Basic data
+        'incomplete': "Incomplete",
+        'solved': "Solved",
+        'root_bound': 'Bound at root',
+        '100_bound': 'Bound after 100 nodes',
+        "objval": 'Object Value',
         "gap": "Final Gap",
-        "root_gap": "Root Gap",
-        "100_gap": "Gap After 100 Nodes",
-        "solved": "Solved",
-        'chk_feas_time': 'Check Feasibility Time',
-        'vf_solved': 'Number of VF problem solved',
-        'ub_solved': 'Number of UB problem solved',
-        'objval': 'Object Value',
-        'cut_time': 'Cut Generation Time',
-	    # 'int_cuts_tot' : 'Integer IDIC calls',
-	    # 'int_cuts_succ': 'Successful Integer IDIC calls',
-        # 'frac_cuts_tot' : 'Fractional IDIC calls',
-	    # 'frac_cuts_succ': 'Successful Fractional IDIC calls'
+        "cpu": "CPU Search Time",
+        'nodes': "Number of Processed Nodes",
+        
+        # CG data
+        'num_cuts': "Total number of cuts",
+        # 'cg_called': "Total number of CG calls",
+        # 'cg_failed': "CG calls failed",
+        'cg_fail_rate': "CG calls fail rate (%)",
+        'cg_time': "CG CPU time",
+        # IDICs data
+        'num_idic': "Total number of IDICs",
+        'num_int_idic' : "Total number of int IDICs",
+        'num_frac_idic': "Total number of frac IDICs",
+        'idic_fail_rate': "IDIC CG calls fail rate (%)",
+        'int_idic_fail_rate': "Int IDIC CG calls fail rate (%)",
+        'frac_idic_fail_rate': "Frac IDIC CG calls fail rate (%)",
+        # IFDs data
+        'idic_ls_fail_rate': "Local Search fail rate (%)",
+        'idic_cg_time': "IDIC CG CPU Time",
+        'idic_cg_avg_time': "Per-call IDIC CG CPU Time"
+
+        # Feasibility Check
+        # "vf_solved": 'Number of VF problem solved',      
+        # "ub_solved": 'Number of UB problem solved',
+        # "vf_time": "VF problem CPU time",
+        # "ub_time": "UB problem CPU time",
+        # 'chk_feas_time': 'Check Feasibility Time'
     }
 
     df_proc = processTable(df_r, displayCols, writeLTX=False, filename=file_txt)
 
     ################### Make Performance Profile ####################
     # columns to compare in the plot
+    # columns to compare in the plot
     plotCols = {
         "cpu": ["CPU Time", 30],
         "nodes": ["Nodes Processed", 15],
-        "chk_feas_time": ['Check Feasibility Time', 20],
-        "vf_solved": ['Number of VF problem solved', 20],
-        "ub_solved": ['Number of UB problem solved', 30],
-        "cut_time": ["Cut Generation CPU Time", 50]
+        'cg_time': ["Cut Generation CPU Time", 50],
+        'idic_fail_rate': ["IDIC CG calls fail rate (%)", 50],
+        'idic_cg_avg_time': ["Per-call IDIC CG CPU Time", 50]
     }
     # plotCols = {}
 
@@ -989,7 +984,7 @@ if __name__ == "__main__":
 
 
     baseline = None
-    baseline = ("MibS_IDIC", 'ipco')
+    # baseline = ("MibS_IDIC", 'ipco')
     #baseline = ("Type1IC", "1.2-opt")
     #baseline = ('GenNoGood+Type1+IntNoGood (link)', '1.2-opt')
     #baseline = ('Watermelon (frac+LV)', '1.2-opt')
@@ -1001,7 +996,9 @@ if __name__ == "__main__":
         versionlegend = False
 
     print(df_proc)
-        
+    
+    dataSets = ['all']
+
     for ds in dataSets:
         df_solved, df_has_soln = dropFilter(df_proc, scenarios, ds)
         # print(df_solved)
@@ -1015,7 +1012,7 @@ if __name__ == "__main__":
                     (ds, col), level=["datasets", "fields"], axis=1, drop_level=True
                 ).copy()
             print("")
-            print("Creating performance profile for "+col)
+            print("Creating performance profile for " + col , ", num instances: ", len(df_sub))
             print("")
             plotPerfProf(
                 df_sub, plotname="perf_" + col + "_" + ds,

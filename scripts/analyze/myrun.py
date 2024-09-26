@@ -10,40 +10,25 @@ pbsfile = '/home/feb223/improvingDir/MibS/scripts/analyze/mibs_batch.pbs'
 # Directory name and path containing test instances in .mps format
 # Keys are used to name subdirs in output dir
 instanceDirs = {
-    # 'MIBLP-XU': '/home/usr/coinbrew/MibS/testSets/BilevelLib/general/MIBLP-XU',
-    #'IBLP-FIS': '/home/sat214/cutPaperMibS/dataPaper/iblpFis',
-    #'INTERD-DEN': '/home/sat214/cutPaperMibS/dataPaper/interdDen',
-    #'IBLP-DEN': '/home/sat214/cutPaperMibS/dataPaper/iblpDen',
-    # 'IBLP-ZHANG': '/home/sat214/MIBS/ozaltinData/convertedData/Testbed1/'
-    # 'INTER-KP': '/home/feb223/improvingDir/MibS/Data/BOBILIB/interdiction/knapsack-interdiction/INTER-KP',
-    # 'DENEGRE': '/home/feb223/improvingDir/MibS/Data/BOBILIB/general-bilevel/purely-integer/DENEGRE',
-    # 'INT0SUM': '/home/feb223/improvingDir/MibS/Data/BOBILIB/general-bilevel/purely-integer/INT0SUM',
-    # 'INTER-KP': '/Users/feb223/projects/coin/intersectionCuts/Data/BOBILIB/interdiction/knapsack-interdiction/INTER-KP',
-    # 'KP': '/home/feb223/improvingDir/MibS/Data/BOBILIB/interdiction/knapsack-interdiction/KP',
-    # 'CCLW':  '/home/feb223/improvingDir/MibS/Data/BOBILIB/interdiction/knapsack-interdiction/CCLW',
-    # 'MIPLIB3': '/home/feb223/improvingDir/MibS/Data/BOBILIB/general-bilevel/purely-integer/MIPLIB3',
-    # 'DENEGRE': '/home/federico/Scrivania/coin/improvingDir/MibS/data/BOBILIB/general-bilevel/purely-integer/DENEGRE',
-    # 'INT0SUM': '/home/federico/Scrivania/coin/improvingDir/MibS/data/BOBILIB/general-bilevel/purely-integer/INT0SUM',
-    # 'ZHANG': '/home/federico/Scrivania/coin/improvingDir/MibS/data/BOBILIB/general-bilevel/purely-integer/ZHANG',
-    # 'INTER-CLIQUE': '/home/federico/Scrivania/coin/improvingDir/MibS/data/BOBILIB/interdiction/clique-interdiction/INTER-CLIQUE/plusBCPIns'
-    # 'mydataset1': '/home/federico/Scrivania/coin/improvingDir/tests/mydataset',
-    # 'DENEGRE2' : '/home/federico/Scrivania/coin/improvingDir/MibS/data/iblpDen2',
-    'ZHANG2' : '/home/federico/Scrivania/coin/improvingDir/MibS/data/iblpZhang2',
-    'INTER-KP': '/home/federico/Scrivania/coin/improvingDir/MibS/data/BOBILIB/interdiction/knapsack-interdiction/INTER-KP'
-
+    "iblpDen"    : "/home/feb223/Datasets/MIBLPLib/iblpDen",
+    "iblpDen2"   : "/home/feb223/Datasets/MIBLPLib/iblpDen2",
+    "iblpZhang"  : "/home/feb223/Datasets/MIBLPLib/iblpZhang",
+    "iblpZhang2" : "/home/feb223/Datasets/MIBLPLib/iblpZhang2",
 }
 
 #versions = ['1.1', 'ib']
 #versions = ['1.2-opt']
 # versions = ['ipco', '1.2']
-versions = ['ipco']
+versions = ['idBC']
 
 # Output parent path
-# outputDir = '/home/feb223/tests/improvingDir/output'
-outputDir = '/home/federico/Scrivania/coin/improvingDir/tests'
+outputDir = '/home/feb223/results/MibS'
 
 # Name
-testname = 'mibs'
+testname = 'idBC'
+
+# Write parameters into files?
+writeParams = True
 
 # Set up senarios
 mibsParamsInputs = {}
@@ -62,35 +47,72 @@ commonParams = {
     # 'MibS_useGreedyHeuristic': '0',       # 0: false, 1: true
     # 'MibS_objBoundStrategy': '0',         # 0: LL obj bound, 1: interdiction bound
     # 'MibS_blisCutStrategy': '0',         # -2: root, -1: auto, 0: disable, any positive integer
-#    'MibS_warmStartLL': '0',
+    # 'MibS_warmStartLL': '0',
     # 'MibS_maxThreadsLL': '1',
     # 'MibS_allowRemoveCut': '0',           # 0: false, 1: true
     # 'MibS_whichCutsLL': '2',              # 0: no cuts, 1: gomory only, 2: all cuts
     # 'MibS_doDualFixing': '0',
-    'MibS_branchStrategy': '0',           # 0: fractional, 1: linking
-#    'MibS_feasCheckSolver': 'SYMPHONY',
+    # 'MibS_branchStrategy': '0',           # 0: fractional, 1: linking
+    # 'MibS_feasCheckSolver': 'SYMPHONY',
     'MibS_printParameters': '1'
 } 
 
-mibsParamsInputs['idB&C-IDIC'] = {
-    'MibS_turnOffDefaultCuts': '1',
-    'MibS_useIntersectionCut': '1',
-    'MibS_useImprovingSolutionIC': '0',
-    'MibS_useImprovingDirectionIC': '1',
-    'MibS_improvingDirectionType': '1',
-    'MibS_maxEnumerationLocalSearch': '2',
-    'MibS_useFractionalCuts': '1',
-    'MibS_useImprovingDirectionPool': '0',
-    'MibS_solveSecondLevelWhenXYVarsInt': '0',
-    'MibS_solveSecondLevelWhenXVarsInt': '0',
-    'MibS_solveSecondLevelWhenLVarsFixed': '0',
-    'MibS_computeBestUBWhenXVarsInt': '0',
-    'MibS_computeBestUBWhenLVarsInt': '0',
-    'MibS_computeBestUBWhenLVarsFixed': '0',
-    'MibS_useLinkingSolutionPool': '0',
+mibsParamsInputs['idBC-LS_3-k_3_fracB'] = {
+    "MibS_branchStrategy" : "0",
+    "MibS_useImprovingDirectionOracle" : "1",
+    "MibS_turnOffDefaultCuts" : "1",
+    "MibS_useIntersectionCut" : "1",
+    "MibS_useImprovingSolutionIC" : "0",
+    "MibS_useImprovingDirectionIC" : "1",
+    "MibS_improvingDirectionType" : "1",
+    "MibS_maxEnumerationLocalSearch" : "3",
+    "MibS_maxFeasImprovingDirections" : "10",
+    "MibS_useFractionalCuts" : "1",
+    "MibS_useLocalSearchDepthLb" : "10",
+    "MibS_useLocalSearchDepthUb" : "10000",
+    "MibS_solveSecondLevelWhenXYVarsInt"  : "0",
+    "MibS_solveSecondLevelWhenXVarsInt"  : "0",
+    "MibS_solveSecondLevelWhenLVarsFixed"  : "0",
+    "MibS_solveSecondLevelWhenLVarsInt"  : "0",
+    "MibS_solveSecondLevelEveryIteration" :  "0",
+    "MibS_computeBestUBWhenXVarsInt"  : "0",
+    "MibS_computeBestUBWhenLVarsInt"  : "0",
+    "MibS_computeBestUBWhenLVarsFixed"  : "0"
 }
 
-mibsParamsInputs['MIBS'] = {}
+# Mibs 1.2 default (IDICs may be turned off) 
+mibsParamsInputs['MibS_1_2_defaultB'] = {
+    "MibS_useImprovingDirectionOracle" : "0"
+}
+
+# Mibs 1.2 default (IDICs on)
+mibsParamsInputs['MibS_1_2_IDIC_defaultB'] = {
+    "MibS_useImprovingDirectionOracle" : "0",
+    "MibS_useImprovingDirectionIC" : "1",
+    "MibS_improvingDirectionType" : "0"
+}
+
+# Mibs 1.2 default (IDICs on with LS)
+mibsParamsInputs['MibS_1_2-LS_3-k_3_defaultB'] = {
+    "MibS_useImprovingDirectionOracle" : "0",
+    "MibS_useImprovingDirectionIC" : "1",
+    "MibS_improvingDirectionType" : "1",
+    "MibS_maxEnumerationLocalSearch" : "3",
+    "MibS_maxFeasImprovingDirections" : "10",
+}
+
+# Mibs 1.2 (only IDICs)
+mibsParamsInputs['MibS_IDIC_fracB'] = {
+    "MibS_branchStrategy" : "0",
+    "MibS_turnOffDefaultCuts" : "1",
+    "MibS_useIntersectionCut" : "1",
+    "MibS_useImprovingSolutionIC" : "0",
+    "MibS_useImprovingDirectionIC" : "1",
+    "MibS_improvingDirectionType" : "0",
+    "MibS_useFractionalCuts" : "1",  
+}
+
+
 
 # mibsParamsInputs['kSwaps+IDP_fracB'] = {
 #     'MibS_turnOffDefaultCuts': '1',

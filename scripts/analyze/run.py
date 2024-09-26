@@ -20,12 +20,40 @@ import matplotlib.pyplot as plt
 # from runparams_cuts import exe, instanceDirs, outputDir, mibsParamsInputs, pbsfile
 from myrun import instanceDirs, outputDir, mibsParamsInputs, pbsfile, testname, versions, commonParams
 
+def writeParamsToFile(outDir, params, gaps=[]):
+    """
+        Write MibS parameter for each scenario into a file
+    """
+    parampath = os.path.join(outDir, 'parameters')
+    if not os.path.exists(parampath):
+        os.mkdir(parampath)
+    
+    for scenario in params:
+        # for this scenario, make a parameter file and save to specified directory
+        paramsubpath1 = os.path.join(parampath, scenario)
+        if not os.path.exists(paramsubpath1):
+            os.mkdir(paramsubpath1)
+        os.chdir(paramsubpath1)
+        file = open(scenario+'.par', 'w')
+        for k, v in params[scenario].items():
+            file.write(k + ' ' + v + '\n')
+        file.close()
+        if gaps:
+            for g in gaps:
+                src = scenario + '.par'
+                dst = scenario + '_g'+ str(g) +'.par'
+                shutil.copyfile(src, dst)
+                file = open(dst, 'a')
+                file.write('MibS_slTargetGap ' + str(g) + '\n')
+                file.close()
+
+
 def runExperiments(exe, instPaths, outDir, versions, params, gaps=[]):
     """
         Use to run experiments on local machine. 
     """
-    writeParams = False
 
+    writeParams = False
     # set up output directories
     # use hierarchy:  outDir/version/param_scenario_name/testset_name/
     for v in versions:
@@ -226,14 +254,15 @@ def runExperimentsPBS(instPaths, outDir, versions, params, pbsfile, gaps=[]):
             exe = '/home/ted/Projects/build-mibs-pr-92/bin/mibs'
         if v == 'improvingDir':
             exe = '/home/feb223/improvingDir/build-MibS-opt/bin/mibs'
-        if v == 'ipco':
-            exe = '/home/feb223/improvingDir/build-ipco-opt/bin/mibs'
+        if v == 'idBC':
+            exe = '/home/feb223/improvingDir/build-idBC-opt/bin/mibs'
         if v == '1.2':
             exe = '/home/feb223/improvingDir/build-1.2-opt/bin/mibs'
                 
         for testset in instPaths:
             for scenario in params:
-                paramcmd = ' -'.join(' '.join(_) for _ in params[scenario].items())
+                paramcmd = '-' + ' -'.join(' '.join(_) for _ in params[scenario].items())
+                # print(paramcmd)
                 if gaps: 
                     for g in gaps:
                         paramcmd_g = '-' + paramcmd + ' -MibS_slTargetGap ' + str(g)
@@ -272,6 +301,8 @@ def runExperimentsPBS(instPaths, outDir, versions, params, pbsfile, gaps=[]):
                                                     "-e", errfile,
                                                     "-N", testname,
                                                     pbsfile])
+                                    # exit(0)
+
                                 else:
                                     print("File", outfile, "exists!")
                             elif instance.name.endswith('.mps.gz'):
@@ -287,6 +318,8 @@ def runExperimentsPBS(instPaths, outDir, versions, params, pbsfile, gaps=[]):
                                                     "-e", errfile,
                                                     "-N", testname,
                                                     pbsfile])
+                                    # exit(0)
+                                    
                                 else:
                                     print("File", outfile, "exists!")
     return                    
@@ -299,11 +332,12 @@ if __name__ == "__main__":
     ######################### Run Experimests #########################
     # local: provide paths in runparams.py
     # exe = '/home/federico/Scrivania/coin/improvingDir/build-ipco-opt/bin/mibs'
-    exe = '/home/federico/Scrivania/coin/improvingDir/build-1.2-opt/bin/mibs'
-    runExperiments(exe, instanceDirs, outputDir, versions, mibsParamsInputs)
+    # exe = '/home/federico/Scrivania/coin/improvingDir/build-1.2-opt/bin/mibs'
+    # runExperiments(exe, instanceDirs, outputDir, versions, mibsParamsInputs)
     
     # using pbs file: provide paths in runparams.py
-    # runExperimentsPBS(instanceDirs, outputDir, versions, mibsParamsInputs, pbsfile)
+    writeParamsToFile(outputDir, mibsParamsInputs)
+    runExperimentsPBS(instanceDirs, outputDir, versions, mibsParamsInputs, pbsfile)
     
 
 
