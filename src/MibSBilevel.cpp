@@ -317,30 +317,30 @@ MibSBilevel::checkBilevelFeasibility(bool isRoot)
 	}
     }
 
-	if (model_->MibSPar_->entry(MibSParams::useImprovingDirectionOracle)){
-		// If solution is integral, 
-		// cut generation is done and improving direction was not found
-		// the solution is bilevel feasible
-		if (model_->isCutGenerationDone && 
-		!model_->improvingDirectionFound && isIntegral_)
-		{
-			isLowerSolved_ = true;
-			isProvenOptimal_ = true;
-			shouldPrune_ = true;
-			storeSol = MibSHeurSol;
-		} else {
-			isLowerSolved_ = false;
-			isProvenOptimal_ = false;
-			storeSol = MibSNoSol;
-		}
+	// if (model_->MibSPar_->entry(MibSParams::useImprovingDirectionOracle)){
+	// 	// If solution is integral, 
+	// 	// cut generation is done and improving direction was not found
+	// 	// the solution is bilevel feasible
+	// 	if (model_->isCutGenerationDone && 
+	// 	!model_->improvingDirectionFound && isIntegral_)
+	// 	{
+	// 		isLowerSolved_ = true;
+	// 		isProvenOptimal_ = true;
+	// 		shouldPrune_ = true;
+	// 		storeSol = MibSHeurSol;
+	// 	} else {
+	// 		isLowerSolved_ = false;
+	// 		isProvenOptimal_ = false;
+	// 		storeSol = MibSNoSol;
+	// 	}
 
-		if (model_->isCutGenerationDone){
-			model_->isCutGenerationDone = false;
-			model_->countIteration_--;
-		}
+	// 	if (model_->isCutGenerationDone){
+	// 		model_->isCutGenerationDone = false;
+	// 		model_->countIteration_--;
+	// 	}
 
-		goto TERM_CHECKBILEVELFEAS;
-	}
+	// 	goto TERM_CHECKBILEVELFEAS;
+	// }
 
 	if (!isContainedInLinkingPool_)
 	{
