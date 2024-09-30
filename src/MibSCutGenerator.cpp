@@ -48,8 +48,6 @@
 #include "OsiSymSolverInterface.hpp"
 #endif
 
-#define DEBUG_IMPROV_DIR
-
 //#############################################################################
 MibSCutGenerator::MibSCutGenerator(MibSModel *mibs)
 {
@@ -1328,7 +1326,7 @@ MibSCutGenerator::solveModelIC(double *uselessIneqs, double *ray, double *rhs,
 //#############################################################################
 bool
 MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, double *lowerLevelSol,
-						double* lpSol, double* fixMe)
+						double* lpSol)
 {
     std::string feasCheckSolver(localModel_->MibSPar_->entry
 				(MibSParams::feasCheckSolver));
@@ -7150,9 +7148,6 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
     currColUb[i] = CoinMin(currColUb[i], 3.0);
   }
 
-  if (localModel_->countIteration_ == 66848){
-    std::cout << "Here!\n";
-  } 
   double startTime(localModel_->broker_->subTreeTimer().getTime());
   while(!foundSolution && k <= max_k){
     generateNeighbors(feasID, ID, w, 0,
@@ -7203,7 +7198,6 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
     for (int i = 0; i < lRows; i++){
       if (G2w[i] - rhs[i] > zerotol){
         isFeasible = false;
-        std::cout << "i = " << i << "\n";
         break;
       }
     }
@@ -7211,7 +7205,6 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
     for (int i = 0; i < lRows; i++){
       if (G2w[i] - uselessIneqs[i] > zerotol){
         isFeasible = false;
-        std::cout << "i = " << i << "\n";
         break;
       }
     }
@@ -7221,18 +7214,15 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
     for (int i = 0; i < lCols; i++){
       if (improvingDir[i] - uselessIneqs[lRows + i] > zerotol){
         isFeasible = false;
-        std::cout << "i = " << i << "\n";
         break;
       }
       if (-improvingDir[i] - uselessIneqs[lRows + lCols + i] > zerotol){
         isFeasible = false;
-        std::cout << "i = " << i << "\n";
         break;
       }
       if (!((improvingDir[i] >= currColLb[i] - zerotol) &&
             (improvingDir[i] <= currColUb[i] + zerotol))){
         isFeasible = false;
-        std::cout << "i = " << i << "\n";
         break;
       }
     }
