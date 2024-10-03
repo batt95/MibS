@@ -207,7 +207,6 @@ MibSModel::initialize()
   
 //   Initialize cutStats
    memset(&cutStats, 0, sizeof(cutStats));
-   memset(&timeProf, 0, sizeof(timeProf));
 }
 
 //#############################################################################

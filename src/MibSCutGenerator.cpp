@@ -6759,21 +6759,6 @@ void MibSCutGenerator::generateNeighbors(int k, double *wLb, double *wUb,
   CoinZeroN(G2w, lRows);
   CoinZeroN(w, lCols);
 
-  if (allOrdDirs_.empty()){
-    allOrdDirs_.resize(localModel_->getLowerDim(), std::vector<double>(2));
-    for (i = 0; i < lCols; i++){
-      var = ordlColIndices_[i];
-      // Which is the preferred direction?
-      if (lObjSense * lObjCoeff[var] >= -zerotol){
-        allOrdDirs_[var][0] = -1;
-        allOrdDirs_[var][1] = 1;
-      } else {
-        allOrdDirs_[var][0] = 1;
-        allOrdDirs_[var][1] = -1;
-      }
-    }
-  }
-
   if (!ordlColIndices_){
     ordlColIndices_ = new int[lCols];
     double *normG2cols = new double[lCols];
@@ -6807,6 +6792,20 @@ void MibSCutGenerator::generateNeighbors(int k, double *wLb, double *wUb,
   //   ordlColIndices_[i] = i;
   // }
 
+  if (allOrdDirs_.empty()){
+    allOrdDirs_.resize(localModel_->getLowerDim(), std::vector<double>(2));
+    for (i = 0; i < lCols; i++){
+      var = ordlColIndices_[i];
+      // Which is the preferred direction?
+      if (lObjSense * lObjCoeff[var] >= -zerotol){
+        allOrdDirs_[var][0] = -1;
+        allOrdDirs_[var][1] = 1;
+      } else {
+        allOrdDirs_[var][0] = 1;
+        allOrdDirs_[var][1] = -1;
+      }
+    }
+  }
 
   std::stack<Frame, std::deque<Frame>> queue;
   // Initialize the stack

@@ -346,7 +346,6 @@ public:
     ~MibSModel();
 
     ID_STATISTICS cutStats;
-    TIME_PROF timeProf;
 
     enum colSign {
        colSignPositive,
