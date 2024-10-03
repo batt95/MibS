@@ -207,6 +207,7 @@ MibSModel::initialize()
   
 //   Initialize cutStats
    memset(&cutStats, 0, sizeof(cutStats));
+   memset(&timeProf, 0, sizeof(timeProf));
 }
 
 //#############################################################################
@@ -4428,6 +4429,7 @@ void MibSModel::printStatistics(){
       << "Local Search CPU time spent: " << cutStats.cpuLocalSearch << std::endl
       << "MILP CPU time spent: " << cutStats.cpuMILP << std::endl
       << "Interesection found " << cutStats.intersectionSuccess << " times out of " 
-      << cutStats.MILPSuccess + cutStats.localSearchSuccess << std::endl;
+      << cutStats.MILPSuccess + cutStats.localSearchSuccess << std::endl
+      << "================================================" << std::endl;
    }
 }

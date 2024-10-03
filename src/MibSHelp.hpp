@@ -16,6 +16,10 @@
 #ifndef MibSHelp_h_
 #define MibSHelp_h_
 
+#include <chrono>
+using namespace std;
+using namespace chrono;
+
 //#############################################################################
 
 struct LINKING_SOLUTION{
@@ -65,5 +69,6 @@ struct ID_STATISTICS {
     double cpuLocalSearch;
     double cpuMILP;
 };
+
 
 #endif

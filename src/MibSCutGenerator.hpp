@@ -33,6 +33,12 @@ class MibSCutGenerator : public BlisConGenerator {
    double bigMBendBin_;
    OsiSolverInterface * ImprovingDirectionICSolver_;
    std::vector<int> leafNodeCutTmpHist_; 
+
+   // feb223
+  //  LocalSearch structures
+   std::vector<IMPROVING_DIRECTION> feasImprDirs_;
+   std::vector<std::vector<double>> allOrdDirs_;
+   int    *ordlColIndices_;
     
  public:
    
@@ -44,22 +50,8 @@ class MibSCutGenerator : public BlisConGenerator {
 
    /****************************************************************/
    //  feb223
-   void generateNeighbors(std::vector<IMPROVING_DIRECTION> &feasID,
-                        IMPROVING_DIRECTION &imprDir,
-                        double *w, double objVal,
-                        CoinPackedMatrix *G2, double *G2w, double *rhs,
-                        double *wLb, double *wUb,
-                        int *ordlColIndices, int k, int currColIdx,
-                        bool goingUp, bool goingDown, bool firstCallThisVar,
-                        bool &keepOn);
-
-   void generateKSwaps(std::vector<IMPROVING_DIRECTION> &feasID,
-                    IMPROVING_DIRECTION &improvingDir,
-                    int n, int k, int index, int size, 
-                    CoinPackedMatrix *&G2, double *&rhs, 
-                    double *&colLb, double *&colUb,
-                    double *&llSol, double *&uselessIneqs,
-                    bool &keepOn);
+   void generateNeighbors(int k, double *wLb, double *wUb, 
+                          CoinPackedMatrix *G2, double *rhs);
 
    bool findImprovingDirectionLocalSearch(double *uselessIneqs, double *improvingDir,
                                 double *lpSol, bool &isTimeLimReached);
