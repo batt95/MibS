@@ -81,6 +81,9 @@ MibSCutGenerator::MibSCutGenerator(MibSModel *mibs)
 MibSCutGenerator::~MibSCutGenerator()
 {
     if(ImprovingDirectionICSolver_) delete ImprovingDirectionICSolver_;
+    
+    // feb223
+    if (ordlColIndices_) delete[] ordlColIndices_;
 
 }
 
