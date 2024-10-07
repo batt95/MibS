@@ -73,6 +73,7 @@ MibSCutGenerator::MibSCutGenerator(MibSModel *mibs)
   
   // feb223
    ordlColIndices_ = 0;
+  if (localModel_->MibSPar_->entry(MibSParams::maxFeasImprovingDirections) > 0)
    feasImprDirs_.reserve(localModel_->MibSPar_->entry(MibSParams::maxFeasImprovingDirections));
 
 }
