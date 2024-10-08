@@ -72,9 +72,10 @@ MibSCutGenerator::MibSCutGenerator(MibSModel *mibs)
   ImprovingDirectionICSolver_ = 0;
   
   // feb223
-   ordlColIndices_ = 0;
+  G2ColOrd_ = 0; 
+  ordlColIndices_ = 0;
   if (localModel_->MibSPar_->entry(MibSParams::maxFeasImprovingDirections) > 0)
-   feasImprDirs_.reserve(localModel_->MibSPar_->entry(MibSParams::maxFeasImprovingDirections));
+    feasImprDirs_.reserve(localModel_->MibSPar_->entry(MibSParams::maxFeasImprovingDirections));
 
 }
 
@@ -85,6 +86,8 @@ MibSCutGenerator::~MibSCutGenerator()
     
     // feb223
     if (ordlColIndices_) delete[] ordlColIndices_;
+
+    if (G2ColOrd_) delete G2ColOrd_;
 
 }
 
@@ -6702,8 +6705,7 @@ void printDirection(IMPROVING_DIRECTION w){
   std::cout << "uselessIneqs: " << w.numIneqs << ", qual: " << w.quality << "\n";
 }
 
-void MibSCutGenerator::generateNeighbors(int k, double *wLb, double *wUb, 
-                                         CoinPackedMatrix *G2, double *rhs){
+void MibSCutGenerator::generateNeighbors(int k, double *wLb, double *wUb, double *rhs){
   
   struct Frame {
       int k;              // how many element we can still move
@@ -6747,8 +6749,8 @@ void MibSCutGenerator::generateNeighbors(int k, double *wLb, double *wUb,
   int lCols(localModel_->getLowerDim());
   double *lObjCoeff(localModel_->getLowerObjCoeffs());
   double lObjSense(localModel_->getLowerObjSense());
-  const double* elem = G2->getElements();
-  const int* indices = G2->getIndices();
+  const double* elem = G2ColOrd_->getElements();
+  const int* indices = G2ColOrd_->getIndices();
   CoinBigIndex last;
 
   int i(0), var(0);
@@ -6772,11 +6774,11 @@ void MibSCutGenerator::generateNeighbors(int k, double *wLb, double *wUb,
       ordlColIndices_[i] = i;
     }
 
-    const double* elem = G2->getElements();
+    const double* elem = G2ColOrd_->getElements();
 
     for (int i = 0; i < lCols; i++){
-      CoinBigIndex last = G2->getVectorLast(i);
-      for (CoinBigIndex j = G2->getVectorFirst(i); j < last; ++j){
+      CoinBigIndex last = G2ColOrd_->getVectorLast(i);
+      for (CoinBigIndex j = G2ColOrd_->getVectorFirst(i); j < last; ++j){
         normG2cols[i] += elem[j];
       }
     }
@@ -6831,12 +6833,12 @@ void MibSCutGenerator::generateNeighbors(int k, double *wLb, double *wUb,
             frame.step = 'D';
 
         case 'D': // Moving along one direction
-            last = G2->getVectorLast(frame.var);
+            last = G2ColOrd_->getVectorLast(frame.var);
             dir = allOrdDirs_[frame.var][frame.j];
             if ((dir > 0 && frame.canGoUp) || (dir < 0 && frame.canGoDown)){
               
               // Add w_i * G2_i to G2w
-              for (CoinBigIndex j = G2->getVectorFirst(frame.var); j < last; ++j){
+              for (CoinBigIndex j = G2ColOrd_->getVectorFirst(frame.var); j < last; ++j){
                 G2w[indices[j]] += dir * elem[j];
               }
 
@@ -6933,9 +6935,9 @@ void MibSCutGenerator::generateNeighbors(int k, double *wLb, double *wUb,
             } 
             
         case 'R': // Reset G2w and w for next iteration
-            last = G2->getVectorLast(frame.var);
+            last = G2ColOrd_->getVectorLast(frame.var);
             dir = allOrdDirs_[frame.var][frame.j];
-            for (CoinBigIndex j = G2->getVectorFirst(frame.var); j < last; ++j){
+            for (CoinBigIndex j = G2ColOrd_->getVectorFirst(frame.var); j < last; ++j){
               G2w[indices[j]] -= dir * elem[j];
             }
             
@@ -6970,7 +6972,7 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
 
   int i, idx;
   double zerotol(1e-5), quality(0);
-  bool foundSolution(false);
+  bool foundSolution(false), getA2G2Matrix(false), getG2Matrix(false);
   int colIndex;
   OsiSolverInterface *oSolver = localModel_->solver();
   double infinity(oSolver->getInfinity());
@@ -6996,15 +6998,30 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
 
   IMPROVING_DIRECTION ID;
 
-  getLowerMatrices(true, false, true);
-  CoinPackedMatrix *G2 = localModel_->getG2Matrix();
-  CoinPackedMatrix *G2colOrd = new CoinPackedMatrix();
-  if (!G2->isColOrdered()){
-    G2colOrd->reverseOrderedCopyOf(*G2);
-  } else {
-    G2colOrd = G2;
+  if(!localModel_->getLowerConstCoefMatrix()){
+	  getA2G2Matrix = true;
   }
-  // G2colOrd->dumpMatrix();
+
+  if(!localModel_->getG2Matrix()){
+	  getG2Matrix = true;
+  }
+
+  if((getA2G2Matrix) || (getG2Matrix)){
+	  getLowerMatrices(getA2G2Matrix, false, getG2Matrix);
+  }
+
+  // We need Column Ordered G2
+  if (!G2ColOrd_){
+    CoinPackedMatrix *G2 = localModel_->getG2Matrix();
+    G2ColOrd_ = new CoinPackedMatrix();
+    if (!G2->isColOrdered()){
+      G2ColOrd_->reverseOrderedCopyOf(*G2);
+    } else {
+      G2ColOrd_ = G2;
+    }
+  }
+
+  
   CoinPackedMatrix *A2G2 = localModel_->getLowerConstCoefMatrix(); // A2G2
   double *AGxy = new double[lRows];
   A2G2->times(lpSol, AGxy);
@@ -7062,7 +7079,7 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
   k = max_k;
   // while(!foundSolution && k <= max_k){
     // Call to k-neighbors iterative
-    generateNeighbors(k, currColLb, currColUb, G2colOrd, rhs);
+    generateNeighbors(k, currColLb, currColUb, rhs);
 
     foundSolution = (feasImprDirs_.size() > 0);
     // k++;
@@ -7081,6 +7098,8 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
     localModel_->cutStats.localSearchSuccess++;
 
 #ifdef DEBUG_IMPROV_DIR
+
+    CoinPackedMatrix *G2 = localModel_->getG2Matrix();
 
     std::sort(feasImprDirs_.begin(), feasImprDirs_.end());
 
@@ -7251,8 +7270,6 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
   delete[] currColLb;
   delete[] currColUb;
   delete[] rhs;
-
-  delete G2colOrd;
 
   localModel_->isCutGenerationDone = true;
   localModel_->improvingDirectionFound = foundSolution;

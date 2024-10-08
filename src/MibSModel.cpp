@@ -2040,10 +2040,6 @@ MibSModel::setupSelf()
 
       MibSCutGenerator *cg = new MibSCutGenerator(this);
 
-      // feb223
-      // FIXME
-      cg->getLowerMatrices(true, false, true);
-
       cg->setStrategy(BlisCutStrategyPeriodic);
       cg->setCutGenerationFreq(1);  // Generate cuts at every node
       

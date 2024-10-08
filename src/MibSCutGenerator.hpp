@@ -36,9 +36,14 @@ class MibSCutGenerator : public BlisConGenerator {
 
    // feb223
   //  LocalSearch structures
-   std::vector<IMPROVING_DIRECTION> feasImprDirs_;
-   std::vector<std::vector<double>> allOrdDirs_;
-   int    *ordlColIndices_;
+  /** Column ordered Matrix G2 **/
+  CoinPackedMatrix *G2ColOrd_;
+  /** Collection of feasible improving direction found during LocalSearch **/
+  std::vector<IMPROVING_DIRECTION> feasImprDirs_;
+  /** Collection of directions {-1, 1} ordered based on LL obj coeff **/
+  std::vector<std::vector<double>> allOrdDirs_;
+  /** Order of LL variables indices to pick during LocalSearch **/
+  int    *ordlColIndices_;        
     
  public:
    
@@ -50,9 +55,10 @@ class MibSCutGenerator : public BlisConGenerator {
 
    /****************************************************************/
    //  feb223
-   void generateNeighbors(int k, double *wLb, double *wUb, 
-                          CoinPackedMatrix *G2, double *rhs);
+   /** Helper function for enumerating ImprovingDirections **/
+   void generateNeighbors(int k, double *wLb, double *wUb, double *rhs);
 
+   /** Helper function for ImprovingDirectionIC **/
    bool findImprovingDirectionLocalSearch(double *uselessIneqs, double *improvingDir,
                                 double *lpSol, bool &isTimeLimReached);
 
