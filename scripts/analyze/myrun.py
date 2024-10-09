@@ -14,6 +14,10 @@ instanceDirs = {
     "iblpDen2"   : "/home/feb223/Datasets/MIBLPLib/iblpDen2",
     "iblpZhang"  : "/home/feb223/Datasets/MIBLPLib/iblpZhang",
     "iblpZhang2" : "/home/feb223/Datasets/MIBLPLib/iblpZhang2",
+    "iblpFis"    : "/home/feb223/Datasets/MIBLPLib/iblpFis",
+    "interKpShi" : "/home/feb223/Datasets/MIBLPLib/interKpShi",
+    "interDen"   : "/home/feb223/Datasets/MIBLPLib/interdDen",
+    # "miblpXu"    : "/home/feb223/Datasets/MIBLPLib/miblpXu"
 }
 
 #versions = ['1.1', 'ib']
@@ -54,10 +58,12 @@ commonParams = {
     # 'MibS_doDualFixing': '0',
     # 'MibS_branchStrategy': '0',           # 0: fractional, 1: linking
     # 'MibS_feasCheckSolver': 'SYMPHONY',
+    "MibS_useFractionalCuts" : "1",
+    'MibS_useImprovingDirectionPool' : '0',
     'MibS_printParameters': '1'
 } 
 
-mibsParamsInputs['idBC-LS_3-k_3_fracB'] = {
+mibsParamsInputs['idBC-LS-k_3-dBnd_Inf_fracB'] = {
     "MibS_branchStrategy" : "0",
     "MibS_useImprovingDirectionOracle" : "1",
     "MibS_turnOffDefaultCuts" : "1",
@@ -67,9 +73,70 @@ mibsParamsInputs['idBC-LS_3-k_3_fracB'] = {
     "MibS_improvingDirectionType" : "1",
     "MibS_maxEnumerationLocalSearch" : "3",
     "MibS_maxFeasImprovingDirections" : "10",
-    "MibS_useFractionalCuts" : "1",
+    "MibS_useLocalSearchDepthLb" : "0",
+    "MibS_useLocalSearchDepthUb" : "10000",
+    "MibS_solveSecondLevelWhenXYVarsInt"  : "0",
+    "MibS_solveSecondLevelWhenXVarsInt"  : "0",
+    "MibS_solveSecondLevelWhenLVarsFixed"  : "0",
+    "MibS_solveSecondLevelWhenLVarsInt"  : "0",
+    "MibS_solveSecondLevelEveryIteration" :  "0",
+    "MibS_computeBestUBWhenXVarsInt"  : "0",
+    "MibS_computeBestUBWhenLVarsInt"  : "0",
+    "MibS_computeBestUBWhenLVarsFixed"  : "0"
+}
+
+mibsParamsInputs['idBC-LS-k_3-dBnd_0_10_fracB'] = {
+    "MibS_branchStrategy" : "0",
+    "MibS_useImprovingDirectionOracle" : "1",
+    "MibS_turnOffDefaultCuts" : "1",
+    "MibS_useIntersectionCut" : "1",
+    "MibS_useImprovingSolutionIC" : "0",
+    "MibS_useImprovingDirectionIC" : "1",
+    "MibS_improvingDirectionType" : "1",
+    "MibS_maxEnumerationLocalSearch" : "3",
+    "MibS_maxFeasImprovingDirections" : "10",
+    "MibS_useLocalSearchDepthLb" : "0",
+    "MibS_useLocalSearchDepthUb" : "10",
+    "MibS_solveSecondLevelWhenXYVarsInt"  : "0",
+    "MibS_solveSecondLevelWhenXVarsInt"  : "0",
+    "MibS_solveSecondLevelWhenLVarsFixed"  : "0",
+    "MibS_solveSecondLevelWhenLVarsInt"  : "0",
+    "MibS_solveSecondLevelEveryIteration" :  "0",
+    "MibS_computeBestUBWhenXVarsInt"  : "0",
+    "MibS_computeBestUBWhenLVarsInt"  : "0",
+    "MibS_computeBestUBWhenLVarsFixed"  : "0"
+}
+
+mibsParamsInputs['idBC-LS-k_3-dBnd_10_Inf_fracB'] = {
+    "MibS_branchStrategy" : "0",
+    "MibS_useImprovingDirectionOracle" : "1",
+    "MibS_turnOffDefaultCuts" : "1",
+    "MibS_useIntersectionCut" : "1",
+    "MibS_useImprovingSolutionIC" : "0",
+    "MibS_useImprovingDirectionIC" : "1",
+    "MibS_improvingDirectionType" : "1",
+    "MibS_maxEnumerationLocalSearch" : "3",
+    "MibS_maxFeasImprovingDirections" : "10",
     "MibS_useLocalSearchDepthLb" : "10",
     "MibS_useLocalSearchDepthUb" : "10000",
+    "MibS_solveSecondLevelWhenXYVarsInt"  : "0",
+    "MibS_solveSecondLevelWhenXVarsInt"  : "0",
+    "MibS_solveSecondLevelWhenLVarsFixed"  : "0",
+    "MibS_solveSecondLevelWhenLVarsInt"  : "0",
+    "MibS_solveSecondLevelEveryIteration" :  "0",
+    "MibS_computeBestUBWhenXVarsInt"  : "0",
+    "MibS_computeBestUBWhenLVarsInt"  : "0",
+    "MibS_computeBestUBWhenLVarsFixed"  : "0"
+}
+
+mibsParamsInputs['idBC-MILP_fracB'] = {
+    "MibS_branchStrategy" : "0",
+    "MibS_useImprovingDirectionOracle" : "1",
+    "MibS_turnOffDefaultCuts" : "1",
+    "MibS_useIntersectionCut" : "1",
+    "MibS_useImprovingSolutionIC" : "0",
+    "MibS_useImprovingDirectionIC" : "1",
+    "MibS_improvingDirectionType" : "0",
     "MibS_solveSecondLevelWhenXYVarsInt"  : "0",
     "MibS_solveSecondLevelWhenXVarsInt"  : "0",
     "MibS_solveSecondLevelWhenLVarsFixed"  : "0",
@@ -85,7 +152,7 @@ mibsParamsInputs['MibS_1_2_defaultB'] = {
     "MibS_useImprovingDirectionOracle" : "0"
 }
 
-# Mibs 1.2 default (IDICs on)
+# Mibs 1.2 default (IDICs)
 mibsParamsInputs['MibS_1_2_IDIC_defaultB'] = {
     "MibS_useImprovingDirectionOracle" : "0",
     "MibS_useImprovingDirectionIC" : "1",
@@ -93,23 +160,25 @@ mibsParamsInputs['MibS_1_2_IDIC_defaultB'] = {
 }
 
 # Mibs 1.2 default (IDICs on with LS)
-mibsParamsInputs['MibS_1_2-LS_3-k_3_defaultB'] = {
+mibsParamsInputs['MibS_1_2-LS-k_3_defaultB'] = {
     "MibS_useImprovingDirectionOracle" : "0",
     "MibS_useImprovingDirectionIC" : "1",
     "MibS_improvingDirectionType" : "1",
     "MibS_maxEnumerationLocalSearch" : "3",
     "MibS_maxFeasImprovingDirections" : "10",
+    "MibS_useLocalSearchDepthLb" : "10",
+    "MibS_useLocalSearchDepthUb" : "10000"
 }
 
 # Mibs 1.2 (only IDICs)
-mibsParamsInputs['MibS_IDIC_fracB'] = {
+mibsParamsInputs['MibS_onlyIDIC_fracB'] = {
     "MibS_branchStrategy" : "0",
+    "MibS_useImprovingDirectionOracle" : "0",
     "MibS_turnOffDefaultCuts" : "1",
     "MibS_useIntersectionCut" : "1",
     "MibS_useImprovingSolutionIC" : "0",
     "MibS_useImprovingDirectionIC" : "1",
-    "MibS_improvingDirectionType" : "0",
-    "MibS_useFractionalCuts" : "1",  
+    "MibS_improvingDirectionType" : "0"
 }
 
 
