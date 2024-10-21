@@ -120,7 +120,8 @@ class MibSCutGenerator : public BlisConGenerator {
     /** Helper function for ImprovingDirectionIC **/
     bool findLowerLevelSolImprovingDirectionIC(double *uselessIneqs,
                                                double *lowerLevelSol,
-                                               double* lpSol);
+                                               double* lpSol,
+                                               double k = 0);
 
     /** Helper function for ImprovingDirectionIC*/
     bool getAlphaImprovingDirectionIC(double** extRay, double *uselessIneqs,

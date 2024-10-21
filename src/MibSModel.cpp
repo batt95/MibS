@@ -3963,12 +3963,13 @@ MibSModel::adjustParameters()
 	   defaultCutIsOn = true;
       paramValue = MibSPar_->entry(MibSParams::improvingDirectionType);
 
+      // Param: "MibS_maxEnumerationLocalSearch"
+      if (MibSPar_->entry(MibSParams::maxEnumerationLocalSearch) > lowerDim_){
+         MibSPar()->setEntry(MibSParams::maxEnumerationLocalSearch,
+                     lowerDim_);
+      }
+
       if (paramValue == MibSImprovingDirectionTypeLocalSearch){
-         // Param: "MibS_maxEnumerationLocalSearch"
-         if (MibSPar_->entry(MibSParams::maxEnumerationLocalSearch) > lowerDim_){
-            MibSPar()->setEntry(MibSParams::maxEnumerationLocalSearch,
-                        lowerDim_);
-         } else 
          if (MibSPar_->entry(MibSParams::maxEnumerationLocalSearch) < 1){
             // Param not set or invalid.
             // Set a default value

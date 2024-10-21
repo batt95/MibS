@@ -354,6 +354,12 @@ MibSCutGenerator::intersectionCuts(BcpsConstraintPool &conPool,
   MibSImprovingDirectionType improvingDirectionType =
 	    static_cast<MibSImprovingDirectionType>
 	    (localModel_->MibSPar_->entry(MibSParams::improvingDirectionType));
+
+  MibSTreeNode * node = static_cast<MibSTreeNode *>(localModel_->activeNode_);
+  int depth = node->getDepth();
+  int localSearchLb = localModel_->MibSPar_->entry(MibSParams::useLocalSearchDepthLb);
+  int localSearchUb = localModel_->MibSPar_->entry(MibSParams::useLocalSearchDepthUb);
+
 	
 	int useLinkingSolutionPool(localModel_->MibSPar_->entry
 		       (MibSParams::useLinkingSolutionPool));
@@ -641,7 +647,16 @@ MibSCutGenerator::intersectionCuts(BcpsConstraintPool &conPool,
 
       startTime = localModel_->broker_->subTreeTimer().getTime();
 
-      foundSolution = findLowerLevelSolImprovingDirectionIC(uselessIneqs, lowerLevelSol, lpSol);
+      int k(localModel_->MibSPar_->entry(MibSParams::maxEnumerationLocalSearch));
+
+      if (k > 0 && 
+        ((localSearchLb < 0 && localSearchUb < 0) ||
+         (depth >= localSearchLb && depth <= localSearchUb))){
+        foundSolution = findLowerLevelSolImprovingDirectionIC(uselessIneqs, lowerLevelSol, lpSol, 
+                                                              static_cast<double>(k));
+      } else {
+        foundSolution = findLowerLevelSolImprovingDirectionIC(uselessIneqs, lowerLevelSol, lpSol);
+      }
 
       endTime = localModel_->broker_->subTreeTimer().getTime();
 
@@ -654,11 +669,6 @@ MibSCutGenerator::intersectionCuts(BcpsConstraintPool &conPool,
       }
     } else 
     if (improvingDirectionType == MibSImprovingDirectionTypeLocalSearch){
-        MibSTreeNode * node = static_cast<MibSTreeNode *>(localModel_->activeNode_);
-        int depth = node->getDepth();
-        int localSearchLb = localModel_->MibSPar_->entry(MibSParams::useLocalSearchDepthLb);
-        int localSearchUb = localModel_->MibSPar_->entry(MibSParams::useLocalSearchDepthUb);
-
         // std::cout << "Depth: " << depth << " ";
 
         if ((localSearchLb < 0 && localSearchUb < 0) ||
@@ -1347,7 +1357,7 @@ MibSCutGenerator::solveModelIC(double *uselessIneqs, double *ray, double *rhs,
 //#############################################################################
 bool
 MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, double *lowerLevelSol,
-						double* lpSol)
+						double* lpSol, double k)
 {
     std::string feasCheckSolver(localModel_->MibSPar_->entry
 				(MibSParams::feasCheckSolver));
@@ -1551,6 +1561,16 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
   //                               localModel_->etol_));
   //  }
 
+  if (k > localModel_->etol_){
+    // Add ||w||_1 <= k
+    colIndex = lCols + lRows;
+    for(i = 0; i < 2 * lCols; i++){
+      addedRow.insert(colIndex + i, 1.00);
+    }
+    nSolver->addRow(addedRow, -infinity, k);
+    addedRow.clear();
+  }
+
     remainingTime = timeLimit - localModel_->broker_->subTreeTimer().getTime();
     remainingTime = CoinMax(remainingTime, 5.00);
 
@@ -1603,8 +1623,14 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
 #endif
     }
 
-    // nSolver->writeLp("water");
+    nSolver->writeLp("water");
     nSolver->branchAndBound();
+
+    if (k > localModel_->etol_){
+      // delete row ||w||_1 <= k
+      int numRows = nSolver->getNumRows() - 1;
+      nSolver->deleteRows(1, &(numRows));
+    }
 
     if(((feasCheckSolver == "SYMPHONY") && (sym_is_time_limit_reached
 					   (dynamic_cast<OsiSymSolverInterface *>
@@ -1676,8 +1702,22 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
 	// 		"findLowerLevelSolImprovingDirectionIC", "MibSCutGenerator");
     }
 
-    localModel_->isCutGenerationDone = true;
-    localModel_->improvingDirectionFound = foundSolution;
+    int branchPar = localModel_->MibSPar_->entry(MibSParams::branchStrategy);
+
+    if (k > localModel_->etol_ && !foundSolution && 
+     (((branchPar == MibSBranchingStrategyLinking) && 
+       (localModel_->bS_->isLinkVarsFixed_)) ||
+      ((branchPar == MibSBranchingStrategyFractional))) && 
+       (localModel_->bS_->isIntegral_)){
+      // This point MUST be separated, so solve the full MILP
+      localModel_->isImprovingDirectionProblemSolved = false;
+      foundSolution = findLowerLevelSolImprovingDirectionIC(uselessIneqs, 
+                                                            lowerLevelSol,
+                                                            lpSol);
+    } else {
+      localModel_->isCutGenerationDone = true;
+      localModel_->improvingDirectionFound = foundSolution;
+    }
     
     delete [] lCoeffsTimesLpSol;
     return foundSolution;
