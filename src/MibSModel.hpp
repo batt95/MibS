@@ -336,6 +336,7 @@ private:
 
     std::vector<IMPROVING_DIRECTION> seenImprovingDirections;
 
+    bool isImprovingDirectionProblemSolved = false;
     bool improvingDirectionFound = false;
     bool isBilevelAlreadyCreated = false;
     bool isCutGenerationDone = false;

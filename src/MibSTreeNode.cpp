@@ -786,11 +786,13 @@ MibSTreeNode::process(bool isRoot, bool rampUp)
             //           << (mibsModel->isCutGenerationDone ? "YES" : "NO")
             //           << std::endl;
             if (mibsModel->isCutGenerationDone &&
+                mibsModel->isImprovingDirectionProblemSolved &&
                 !mibsModel->improvingDirectionFound && 
                 mibsModel->bS_->isIntegral_){
                 // std::cout << "++++ Bilevel Feasible Solution!\n";
                 model->feasibleSolution(numIntInfs, numObjInfs);
             }
+            mibsModel->isImprovingDirectionProblemSolved = false;
             mibsModel->improvingDirectionFound = false;
             mibsModel->isBilevelAlreadyCreated = false;
             mibsModel->isCutGenerationDone = false;

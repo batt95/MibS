@@ -2363,7 +2363,10 @@ MibSModel::userFeasibleSolution(const double * solution, bool &userFeasible)
    // }
    
    if (MibSPar_->entry(MibSParams::useImprovingDirectionOracle)){
-      if (isCutGenerationDone && !improvingDirectionFound && bS_->isIntegral_){
+      if (isCutGenerationDone && 
+          isImprovingDirectionProblemSolved &&
+          !improvingDirectionFound && 
+          bS_->isIntegral_){
          std::cout << "++++ Bilevel Feasible Solution!\n";
          bS_->shouldPrune_ = true;
          bS_->isLowerSolved_ = true;

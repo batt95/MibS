@@ -1545,6 +1545,11 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
   nSolver->setColUpper(i, CoinMax(floor(origColUb[colIndex] - value +
                                 localModel_->etol_), 0.0));
     }
+  // nSolver->setColLower(i, ceil(origColLb[colIndex] - value -
+  //                                     localModel_->etol_));
+  // nSolver->setColUpper(i, floor(origColUb[colIndex] - value +
+  //                               localModel_->etol_));
+  //  }
 
     remainingTime = timeLimit - localModel_->broker_->subTreeTimer().getTime();
     remainingTime = CoinMax(remainingTime, 5.00);
@@ -1605,9 +1610,13 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
 					   (dynamic_cast<OsiSymSolverInterface *>
 					    (nSolver)->getSymphonyEnvironment())))
        || (timeLimit - localModel_->broker_->subTreeTimer().getTime() < 3)){
+        localModel_->isImprovingDirectionProblemSolved = false;
         localModel_->setTimeLimitReached(); // YX: replace shouldPrune_ by timeout
     }
     else if(nSolver->isProvenOptimal()){
+      
+      localModel_->isImprovingDirectionProblemSolved = true;
+
       const double *optSol = nSolver->getColSolution();
       CoinDisjointCopyN(optSol, lCols, lowerLevelSol);
       // YX: numerical issue; skip if the lowerLevelSol found is all zero
@@ -1651,7 +1660,14 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
         }
       }
     }
-    else{//this case should not happen when we use intersection cut for removing
+    else if (nSolver->isProvenPrimalInfeasible()){
+      // feb223
+      // when using ImprovingDirectionOracle infeasibility here
+      // means that the current solution is bilevel feasible (if integral)
+      localModel_->isImprovingDirectionProblemSolved = true;
+    }
+    else{
+      //this case should not happen when we use intersection cut for removing
 	//the optimal solution of relaxation which satisfies integrality requirements
 	// std::cout << "iteration = " << localModel_->countIteration_ << std::endl;
 	// std::cout << "remaining time = " << remainingTime << std::endl;
@@ -6971,7 +6987,7 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
 {
 
   int i, idx;
-  double zerotol(1e-5), quality(0);
+  double zerotol(localModel_->etol_), quality(0);
   bool foundSolution(false), getA2G2Matrix(false), getG2Matrix(false);
   int colIndex;
   OsiSolverInterface *oSolver = localModel_->solver();
@@ -7116,6 +7132,7 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
     }
 
     bool isFeasible = true;
+    double *G2w = new double[lRows];
     CoinZeroN(G2w, lRows);
     G2->times(improvingDir, G2w);
 
@@ -7151,6 +7168,8 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
         break;
       }
     }
+
+    delete[] G2w;
 
     if (!isFeasible){
       throw CoinError("The ID from LS is not feasible",
@@ -7215,6 +7234,12 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
   }
 
   if (foundSolution){
+
+    // if the ID comes from the LS we have a proof of feasibility
+    // for the IFD problem, then mark the ImprovingDirectionProblem
+    // as solved
+    localModel_->isImprovingDirectionProblemSolved = true;
+
     std::sort(feasImprDirs_.begin(), feasImprDirs_.end());
 
     ID = feasImprDirs_[0];
