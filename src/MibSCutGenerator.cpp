@@ -1623,7 +1623,7 @@ MibSCutGenerator::findLowerLevelSolImprovingDirectionIC(double *uselessIneqs, do
 #endif
     }
 
-    nSolver->writeLp("water");
+    // nSolver->writeLp("water");
     nSolver->branchAndBound();
 
     if (k > localModel_->etol_){
