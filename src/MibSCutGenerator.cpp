@@ -647,7 +647,7 @@ MibSCutGenerator::intersectionCuts(BcpsConstraintPool &conPool,
 
       startTime = localModel_->broker_->subTreeTimer().getTime();
 
-      int k(localModel_->MibSPar_->entry(MibSParams::maxSizeNeighborhood));
+      int k(localModel_->MibSPar_->entry(MibSParams::maxNeighborhoodSize));
 
       if (k > 0 && 
         ((localSearchLb < 0 && localSearchUb < 0) ||
@@ -7119,7 +7119,7 @@ bool MibSCutGenerator::findImprovingDirectionLocalSearch(
   }
 
   int k(1), max_k(localModel_->MibSPar_->entry(
-            MibSParams::maxSizeNeighborhood));
+            MibSParams::maxNeighborhoodSize));
   bool keepOn(true);
 
   // If the currColLb/Ub are too "large" then

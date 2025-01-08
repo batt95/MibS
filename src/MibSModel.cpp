@@ -3963,17 +3963,17 @@ MibSModel::adjustParameters()
 	   defaultCutIsOn = true;
       paramValue = MibSPar_->entry(MibSParams::improvingDirectionType);
 
-      // Param: "MibS_maxSizeNeighborhood"
-      if (MibSPar_->entry(MibSParams::maxSizeNeighborhood) > lowerDim_){
-         MibSPar()->setEntry(MibSParams::maxSizeNeighborhood,
+      // Param: "MibS_maxNeighborhoodSize"
+      if (MibSPar_->entry(MibSParams::maxNeighborhoodSize) > lowerDim_){
+         MibSPar()->setEntry(MibSParams::maxNeighborhoodSize,
                      lowerDim_);
       }
 
       if (paramValue == MibSImprovingDirectionTypeLocalSearch){
-         if (MibSPar_->entry(MibSParams::maxSizeNeighborhood) < 1){
+         if (MibSPar_->entry(MibSParams::maxNeighborhoodSize) < 1){
             // Param not set or invalid.
             // Set a default value
-            MibSPar()->setEntry(MibSParams::maxSizeNeighborhood,
+            MibSPar()->setEntry(MibSParams::maxNeighborhoodSize,
                         (3 < lowerDim_ ? 3 : lowerDim_));
          } 
          // Param: "MibS_maxFeasImprovingDirections"
