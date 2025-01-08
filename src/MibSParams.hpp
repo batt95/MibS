@@ -74,7 +74,7 @@ class MibSParams : public AlpsParameterSet {
      useImprovingDirectionIC,
      //  feb233
      improvingDirectionType,
-     maxEnumerationLocalSearch,
+     maxSizeNeighborhood,
      maxFeasImprovingDirections,
      useLocalSearchDepthLb,
      useLocalSearchDepthUb,
